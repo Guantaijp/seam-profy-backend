@@ -1,68 +1,44 @@
 import mongoose from 'mongoose';
 
-const OrderSchema = new mongoose.Schema({
-  orderNumber: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  rfqId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'RFQ',
-    required: true
-  },
-  supplierId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  items: [{
-    itemId: {
+const orderSchema = new mongoose.Schema(
+  {
+    rfqId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Item',
-      required: true
+      ref: 'RFQ',
+      required: true,
     },
-    quantity: {
-      type: Number,
-      required: true
+    negotiationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Negotiation',
+      required: true,
     },
-    agreedPrice: {
+    supplierId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Supplier',
+      required: true,
+    },
+    healthFacilityId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User', // Assuming health facilities are part of the `User` model
+      required: true,
+    },
+    totalPrice: {
       type: Number,
-      required: true
-    }
-  }],
-  totalAmount: {
-    type: Number,
-    required: true
+      required: true,
+    },
+    deliveryDetails: {
+      address: { type: String, required: true },
+      deliveryDate: { type: Date, required: true },
+    },
+    status: {
+      type: String,
+      enum: ['Pending', 'Confirmed', 'Delivered', 'Cancelled'],
+      default: 'Pending',
+    },
   },
-  status: {
-    type: String,
-    enum: [
-      'Pending', 
-      'Processing', 
-      'Shipped', 
-      'Delivered', 
-      'Cancelled'
-    ],
-    default: 'Pending'
-  },
-  deliveryTimeframe: {
-    type: String
-  },
-  billingAddress: {
-    type: Object
-  },
-  shippingAddress: {
-    type: Object
-  },
-  cancellationReason: {
-    type: String
-  }
-}, { timestamps: true });
+  { timestamps: true }
+);
 
-export default mongoose.model('Order', OrderSchema);
+const Order = mongoose.model('Order', orderSchema);
+
+export default Order;

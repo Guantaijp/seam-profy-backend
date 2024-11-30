@@ -1,27 +1,17 @@
 import express from 'express';
-import {
-  createOrderFromRFQ,
-  getOrderById,
-  getAllOrders,
-  updateOrderStatus,
-  cancelOrder
-} from '../controllers/orderController.js';
+import { createOrder,} from '../controllers/orderController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Order routes
-router.route('/create-from-rfq/:rfqId')
-  .post(authMiddleware, createOrderFromRFQ);
+// @route POST /api/orders
+router.post('/orders', authMiddleware, createOrder);
 
-router.route('/')
-  .get(authMiddleware, getAllOrders);
+// // Route for suppliers to see orders made to them
+// router.get('/supplier', authMiddleware, getOrdersForSupplier);
 
-router.route('/:id')
-  .get(authMiddleware, getOrderById)
-  .patch(authMiddleware, updateOrderStatus);
+// // Route for health facilities to see orders they have made
+// router.get('/health-facility', authMiddleware, getOrdersForHealthFacility);
 
-// Cancel order route
-router.patch('/:id/cancel', authMiddleware, cancelOrder);
 
 export default router;
