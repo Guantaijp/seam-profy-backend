@@ -132,12 +132,155 @@
             }
           }
         ]
+      },
+      {
+        "name": "RFQ Management",
+        "item": [
+          {
+            "name": "Create RFQ",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Content-Type", "value": "multipart/form-data" },
+                { "key": "Authorization", "value": "Bearer {{token}}" }
+              ],
+              "body": {
+                "mode": "formdata",
+                "formdata": [
+                  { "key": "title", "value": "RFQ for Medical Supplies", "type": "text" },
+                  { "key": "items[0][itemName]", "value": "Surgical Masks", "type": "text" },
+                  { "key": "items[0][quantity]", "value": "1000", "type": "text" },
+                  { "key": "items[0][unit]", "value": "pieces", "type": "text" },
+                  { "key": "items[0][specifications]", "value": "N95 Masks, Blue", "type": "text" },
+                  { "key": "attachments", "type": "file", "src": "/path/to/sample-file.pdf" }
+                ]
+              },
+              "url": {
+                "raw": "{{base_url}}/api/rfqs",
+                "host": ["{{base_url}}"],
+                "path": ["api", "rfqs"]
+              }
+            }
+          },
+          {
+            "name": "Get All RFQs",
+            "request": {
+              "method": "GET",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/rfqs",
+                "host": ["{{base_url}}"],
+                "path": ["api", "rfqs"]
+              }
+            }
+          },
+          {
+            "name": "Get RFQ by ID",
+            "request": {
+              "method": "GET",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/rfqs/{{rfqId}}",
+                "host": ["{{base_url}}"],
+                "path": ["api", "rfqs", "{{rfqId}}"]
+              }
+            }
+          },
+          {
+            "name": "Update RFQ",
+            "request": {
+              "method": "PUT",
+              "header": [
+                { "key": "Content-Type", "value": "multipart/form-data" },
+                { "key": "Authorization", "value": "Bearer {{token}}" }
+              ],
+              "body": {
+                "mode": "formdata",
+                "formdata": [
+                  { "key": "title", "value": "Updated RFQ for Medical Supplies", "type": "text" },
+                  { "key": "items[0][itemName]", "value": "Surgical Gloves", "type": "text" },
+                  { "key": "items[0][quantity]", "value": "2000", "type": "text" },
+                  { "key": "items[0][unit]", "value": "pairs", "type": "text" },
+                  { "key": "items[0][specifications]", "value": "Sterile, Size Medium", "type": "text" },
+                  { "key": "attachments", "type": "file", "src": "/path/to/new-sample-file.pdf" }
+                ]
+              },
+              "url": {
+                "raw": "{{base_url}}/api/rfqs/{{rfqId}}",
+                "host": ["{{base_url}}"],
+                "path": ["api", "rfqs", "{{rfqId}}"]
+              }
+            }
+          },
+          {
+            "name": "Delete RFQ",
+            "request": {
+              "method": "DELETE",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/rfqs/{{rfqId}}",
+                "host": ["{{base_url}}"],
+                "path": ["api", "rfqs", "{{rfqId}}"]
+              }
+            }
+          },
+          {
+            "name": "Publish RFQ",
+            "request": {
+              "method": "PATCH",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/rfqs/{{rfqId}}/publish",
+                "host": ["{{base_url}}"],
+                "path": ["api", "rfqs", "{{rfqId}}", "publish"]
+              }
+            }
+          },
+          {
+            "name": "Remove Attachment",
+            "request": {
+              "method": "DELETE",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/rfqs/{{rfqId}}/attachments/{{attachmentId}}",
+                "host": ["{{base_url}}"],
+                "path": ["api", "rfqs", "{{rfqId}}", "attachments", "{{attachmentId}}"]
+              }
+            }
+          }
+        ]
       }
     ],
+    
     "variable": [
       {
         "key": "base_url",
         "value": "http://localhost:5000",
+        "type": "string"
+      },
+      {
+        "key": "token",
+        "value": "",
+        "type": "string"
+      },
+      {
+        "key": "rfqId",
+        "value": "",
+        "type": "string"
+      },
+      {
+        "key": "attachmentId",
+        "value": "",
         "type": "string"
       }
     ]
