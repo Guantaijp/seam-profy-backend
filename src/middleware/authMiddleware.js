@@ -5,34 +5,34 @@ import envConfig from '../config/envConfig.js';
 const authMiddleware = async (req, res, next) => {
   let token;
 
-  // Check for token in Authorization header
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
+  // Check if token is provided in the Authorization header
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
-      // Get token from header
-      token = req.headers.authorization.split(' ')[1];
+      token = req.headers.authorization.split(' ')[1]; // Extract token
+      const decoded = jwt.verify(token, envConfig.JWT_SECRET); // Decode token
 
-      // Verify token
-      const decoded = jwt.verify(token, envConfig.JWT_SECRET);
+      // Retrieve user details based on decoded user ID
+      const user = await User.findById(decoded.id).select('-password');
 
-      // Get user from the token
-      req.user = await User.findById(decoded.id).select('-password');
-
-      if (!req.user) {
+      if (!user) {
         return res.status(401).json({ message: 'Not authorized, user not found' });
       }
 
-      next();
+      // Attach user info to req.user
+      req.user = { _id: user._id, ...user.toObject() };
+
+      next(); // Continue to the next route handler
     } catch (error) {
-      console.error(error);
-      res.status(401).json({ message: 'Not authorized' });
+      console.error('Auth Middleware Error:', error);
+      return res.status(401).json({
+        message: 'Not authorized, token is invalid or expired',
+        error: error.message
+      });
     }
   }
 
   if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+    return res.status(401).json({ message: 'Not authorized, no token provided' });
   }
 };
 

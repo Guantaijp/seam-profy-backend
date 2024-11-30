@@ -1,288 +1,514 @@
 {
-    "info": {
-      "_postman_id": "pharma-procurement-sample",
-      "name": "Pharma Procurement Backend",
-      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-    },
-    "item": [
-      {
-        "name": "Authentication",
-        "item": [
-          {
-            "name": "Register Healthcare Facility",
-            "request": {
-              "method": "POST",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": {
-                "mode": "formdata",
-                "formdata": [
-                  { "key": "accountType", "value": "Healthcare Facility", "type": "text" },
-                  { "key": "businessName", "value": "St. Mary's Hospital", "type": "text" },
-                  { "key": "location", "value": "Nairobi, Kenya", "type": "text" },
-                  { "key": "taxId", "value": "TAX-HF-001", "type": "text" },
-                  { "key": "email", "value": "admin@stmarys.com", "type": "text" },
-                  { "key": "password", "value": "StMarys2024!", "type": "text" },
-                  { "key": "registrationCertificate", "type": "file", "src": "/path/to/hospital-registration.pdf" },
-                  { "key": "taxIdCertificate", "type": "file", "src": "/path/to/tax-certificate.pdf" }
-                ]
-              },
-              "url": {
-                "raw": "{{base_url}}/api/auth/register",
-                "host": ["{{base_url}}"],
-                "path": ["api", "auth", "register"]
-              }
-            }
-          },
-          {
-            "name": "Register Supplier",
-            "request": {
-              "method": "POST",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": {
-                "mode": "formdata",
-                "formdata": [
-                  { "key": "accountType", "value": "Supplier", "type": "text" },
-                  { "key": "businessName", "value": "MedSupply Pharmaceuticals", "type": "text" },
-                  { "key": "location", "value": "Mombasa, Kenya", "type": "text" },
-                  { "key": "taxId", "value": "TAX-SUP-001", "type": "text" },
-                  { "key": "email", "value": "sales@medsupply.com", "type": "text" },
-                  { "key": "password", "value": "MedSupply2024!", "type": "text" },
-                  { "key": "registrationCertificate", "type": "file", "src": "/path/to/supplier-registration.pdf" },
-                  { "key": "taxIdCertificate", "type": "file", "src": "/path/to/supplier-tax-certificate.pdf" }
-                ]
-              },
-              "url": {
-                "raw": "{{base_url}}/api/auth/register",
-                "host": ["{{base_url}}"],
-                "path": ["api", "auth", "register"]
-              }
-            }
-          },
-          {
-            "name": "Login Healthcare Facility",
-            "request": {
-              "method": "POST",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": {
-                "mode": "raw",
-                "raw": "{\"email\":\"admin@stmarys.com\",\"password\":\"StMarys2024!\"}"
-              },
-              "url": {
-                "raw": "{{base_url}}/api/auth/login",
-                "host": ["{{base_url}}"],
-                "path": ["api", "auth", "login"]
-              }
-            }
-          },
-          {
-            "name": "Login Supplier",
-            "request": {
-              "method": "POST",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": {
-                "mode": "raw",
-                "raw": "{\"email\":\"sales@medsupply.com\",\"password\":\"MedSupply2024!\"}"
-              },
-              "url": {
-                "raw": "{{base_url}}/api/auth/login",
-                "host": ["{{base_url}}"],
-                "path": ["api", "auth", "login"]
-              }
-            }
-          },
-          {
-            "name": "Forgot Password",
-            "request": {
-              "method": "POST",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": {
-                "mode": "raw",
-                "raw": "{\"email\":\"admin@stmarys.com\"}"
-              },
-              "url": {
-                "raw": "{{base_url}}/api/auth/forgot-password",
-                "host": ["{{base_url}}"],
-                "path": ["api", "auth", "forgot-password"]
-              }
-            }
-          }
-        ]
-      },
-      {
-        "name": "RFQ Management",
-        "item": [
-          {
-            "name": "Create RFQ",
-            "request": {
-              "method": "POST",
-              "header": [
-                { "key": "Content-Type", "value": "multipart/form-data" },
-                { "key": "Authorization", "value": "Bearer {{token}}" }
-              ],
-              "body": {
-                "mode": "formdata",
-                "formdata": [
-                  { "key": "title", "value": "RFQ for Medical Supplies", "type": "text" },
-                  { "key": "items[0][itemName]", "value": "Surgical Masks", "type": "text" },
-                  { "key": "items[0][quantity]", "value": "1000", "type": "text" },
-                  { "key": "items[0][unit]", "value": "pieces", "type": "text" },
-                  { "key": "items[0][specifications]", "value": "N95 Masks, Blue", "type": "text" },
-                  { "key": "attachments", "type": "file", "src": "/path/to/sample-file.pdf" }
-                ]
-              },
-              "url": {
-                "raw": "{{base_url}}/api/rfqs",
-                "host": ["{{base_url}}"],
-                "path": ["api", "rfqs"]
-              }
-            }
-          },
-          {
-            "name": "Get All RFQs",
-            "request": {
-              "method": "GET",
-              "header": [
-                { "key": "Authorization", "value": "Bearer {{token}}" }
-              ],
-              "url": {
-                "raw": "{{base_url}}/api/rfqs",
-                "host": ["{{base_url}}"],
-                "path": ["api", "rfqs"]
-              }
-            }
-          },
-          {
-            "name": "Get RFQ by ID",
-            "request": {
-              "method": "GET",
-              "header": [
-                { "key": "Authorization", "value": "Bearer {{token}}" }
-              ],
-              "url": {
-                "raw": "{{base_url}}/api/rfqs/{{rfqId}}",
-                "host": ["{{base_url}}"],
-                "path": ["api", "rfqs", "{{rfqId}}"]
-              }
-            }
-          },
-          {
-            "name": "Update RFQ",
-            "request": {
-              "method": "PUT",
-              "header": [
-                { "key": "Content-Type", "value": "multipart/form-data" },
-                { "key": "Authorization", "value": "Bearer {{token}}" }
-              ],
-              "body": {
-                "mode": "formdata",
-                "formdata": [
-                  { "key": "title", "value": "Updated RFQ for Medical Supplies", "type": "text" },
-                  { "key": "items[0][itemName]", "value": "Surgical Gloves", "type": "text" },
-                  { "key": "items[0][quantity]", "value": "2000", "type": "text" },
-                  { "key": "items[0][unit]", "value": "pairs", "type": "text" },
-                  { "key": "items[0][specifications]", "value": "Sterile, Size Medium", "type": "text" },
-                  { "key": "attachments", "type": "file", "src": "/path/to/new-sample-file.pdf" }
-                ]
-              },
-              "url": {
-                "raw": "{{base_url}}/api/rfqs/{{rfqId}}",
-                "host": ["{{base_url}}"],
-                "path": ["api", "rfqs", "{{rfqId}}"]
-              }
-            }
-          },
-          {
-            "name": "Delete RFQ",
-            "request": {
-              "method": "DELETE",
-              "header": [
-                { "key": "Authorization", "value": "Bearer {{token}}" }
-              ],
-              "url": {
-                "raw": "{{base_url}}/api/rfqs/{{rfqId}}",
-                "host": ["{{base_url}}"],
-                "path": ["api", "rfqs", "{{rfqId}}"]
-              }
-            }
-          },
-          {
-            "name": "Publish RFQ",
-            "request": {
-              "method": "PATCH",
-              "header": [
-                { "key": "Authorization", "value": "Bearer {{token}}" }
-              ],
-              "url": {
-                "raw": "{{base_url}}/api/rfqs/{{rfqId}}/publish",
-                "host": ["{{base_url}}"],
-                "path": ["api", "rfqs", "{{rfqId}}", "publish"]
-              }
-            }
-          },
-          {
-            "name": "Remove Attachment",
-            "request": {
-              "method": "DELETE",
-              "header": [
-                { "key": "Authorization", "value": "Bearer {{token}}" }
-              ],
-              "url": {
-                "raw": "{{base_url}}/api/rfqs/{{rfqId}}/attachments/{{attachmentId}}",
-                "host": ["{{base_url}}"],
-                "path": ["api", "rfqs", "{{rfqId}}", "attachments", "{{attachmentId}}"]
-              }
-            }
-          }
-        ]
-      }
-    ],
-    
-    "variable": [
-      {
-        "key": "base_url",
-        "value": "http://localhost:5000",
-        "type": "string"
-      },
-      {
-        "key": "token",
-        "value": "",
-        "type": "string"
-      },
-      {
-        "key": "rfqId",
-        "value": "",
-        "type": "string"
-      },
-      {
-        "key": "attachmentId",
-        "value": "",
-        "type": "string"
-      }
-    ]
-  }
-  
+	"info": {
+		"_postman_id": "pharma-procurement-full-workflow",
+		"name": "Pharma Procurement Full Workflow",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000",
+			"type": "string"
+		},
+		{
+			"key": "healthFacilityToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "supplierToken",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register Health Facility",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "accountType",
+									"value": "HealthFacility",
+									"type": "text"
+								},
+								{
+									"key": "businessName",
+									"value": "Central City Hospital",
+									"type": "text"
+								},
+								{
+									"key": "location",
+									"value": "Downtown, NY",
+									"type": "text"
+								},
+								{
+									"key": "taxId",
+									"value": "98-7654321",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "jpguantai@gmail.com",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "HealthCare2024!",
+									"type": "text"
+								},
+								{
+									"key": "registrationCertificate",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "taxIdCertificate",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/auth/register",
+							"host": [
+								"http://localhost:5000"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register Supplier",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "accountType",
+									"value": "Supplier",
+									"type": "text"
+								},
+								{
+									"key": "businessName",
+									"value": "MedSupply Solutions",
+									"type": "text"
+								},
+								{
+									"key": "location",
+									"value": "Midtown, NY",
+									"type": "text"
+								},
+								{
+									"key": "taxId",
+									"value": "12-3456789",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "guntaiguantai0@gmail.com",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "SupplyChain2024!",
+									"type": "text"
+								},
+								{
+									"key": "registrationCertificate",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "taxIdCertificate",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/auth/register",
+							"host": [
+								"http://localhost:5000"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login Health Facility",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@centralcityhospital.com\",\n    \"password\": \"HealthCare2024!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/auth/login",
+							"host": [
+								"http://localhost:5000"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login Supplier",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"contact@medsupply.com\",\n    \"password\": \"SupplyChain2024!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/auth/login",
+							"host": [
+								"http://localhost:5000"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "RFQ Workflow",
+			"item": [
+				{
+					"name": "Create RFQ",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{healthFacilityToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Medical Supplies Procurement",
+									"type": "text"
+								},
+								{
+									"key": "summary",
+									"value": "Urgent procurement of essential medical supplies for Q2 2024",
+									"type": "text"
+								},
+								{
+                                    "key": "items",
+                                    "value": "[{\"name\": \"Surgical Masks\", \"quantity\": 10000, \"description\": \"High-quality disposable surgical masks\"}, {\"name\": \"Latex Gloves\", \"quantity\": 5000, \"description\": \"Medium-sized latex examination gloves\"}]",
+                                    "type": "text"
+                                },
+								{
+									"key": "attachments",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/rfq",
+							"host": [
+								"http://localhost:5000"
+							],
+							"path": [
+								"api",
+								"rfq"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Publish RFQ",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{healthFacilityToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/rfq/:id/publish",
+							"host": [
+								"http://localhost:5000"
+							],
+							"path": [
+								"api",
+								"rfq",
+								":id",
+								"publish"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "RFQ_ID_HERE"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Negotiate RFQ",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{supplierToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"items\": [\n        {\n            \"itemId\": \"ITEM_ID_1\",\n            \"quotedPrice\": 2.50,\n            \"quantity\": 10000\n        },\n        {\n            \"itemId\": \"ITEM_ID_2\",\n            \"quotedPrice\": 1.75,\n            \"quantity\": 5000\n        }\n    ],\n    \"totalQuotePrice\": 35000,\n    \"deliveryTimeframe\": \"4-6 weeks\",\n    \"additionalNotes\": \"Bulk order discount applied\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/rfq/:id/negotiate",
+							"host": [
+								"http://localhost:5000"
+							],
+							"path": [
+								"api",
+								"rfq",
+								":id",
+								"negotiate"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "RFQ_ID_HERE"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get RFQ Negotiations",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{healthFacilityToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/rfq/:id/negotiations",
+							"host": [
+								"http://localhost:5000"
+							],
+							"path": [
+								"api",
+								"rfq",
+								":id",
+								"negotiations"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "RFQ_ID_HERE"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Select Negotiation",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{healthFacilityToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/rfq/:rfqId/select-negotiation/:negotiationId",
+							"host": [
+								"http://localhost:5000"
+							],
+							"path": [
+								"api",
+								"rfq",
+								":rfqId",
+								"select-negotiation",
+								":negotiationId"
+							],
+							"variable": [
+								{
+									"key": "rfqId",
+									"value": "RFQ_ID_HERE"
+								},
+								{
+									"key": "negotiationId",
+									"value": "NEGOTIATION_ID_HERE"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Order Management",
+			"item": [
+				{
+					"name": "Create Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{healthFacilityToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"rfqId\": \"RFQ_ID_HERE\",\n    \"negotiationId\": \"NEGOTIATION_ID_HERE\",\n    \"deliveryInstructions\": \"Deliver to main receiving dock\",\n    \"billingInformation\": {\n        \"address\": \"Central City Hospital, 123 Main St, New York, NY\",\n        \"paymentTerms\": \"Net 30\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/orders",
+							"host": [
+								"http://localhost:5000"
+							],
+							"path": [
+								"api",
+								"orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Orders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{healthFacilityToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/orders",
+							"host": [
+								"http://localhost:5000"
+							],
+							"path": [
+								"api",
+								"orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Order Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{supplierToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"Shipped\",\n    \"trackingNumber\": \"TRACK123456789\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/orders/:id/status",
+							"host": [
+								"http://localhost:5000"
+							],
+							"path": [
+								"api",
+								"orders",
+								":id",
+								"status"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "ORDER_ID_HERE"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

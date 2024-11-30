@@ -6,7 +6,8 @@ import {
   updateRFQ,
   deleteRFQ,
   publishRFQ,
-  removeAttachment
+  removeAttachment,
+
 } from '../controllers/rfqController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import multer from 'multer';
@@ -42,5 +43,7 @@ router.patch('/:id/publish', authMiddleware, publishRFQ);
 
 // Remove attachment route
 router.delete('/:id/attachments/:attachmentId', authMiddleware, removeAttachment);
+
+
 
 export default router;

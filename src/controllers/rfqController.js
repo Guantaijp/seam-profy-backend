@@ -2,6 +2,7 @@ import RFQ from '../models/RFQ.js';
 import { v2 as cloudinary } from 'cloudinary';
 import envConfig from '../config/envConfig.js';
 
+
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: envConfig.CLOUDINARY_CLOUD_NAME,
@@ -26,53 +27,66 @@ const uploadToCloudinary = async (file, folder) => {
 // @desc    Create new RFQ
 // @route   POST /api/rfq
 export const createRFQ = async (req, res) => {
-  try {
-    const { title, items, summary = ''  } = req.body;
-
-    // Create RFQ object
-    const rfqData = {
-      title,
-      items: items || [],
-      createdBy: req.user._id,
-      summary,
-      status: 'Draft'
-    };
-
-    // Handle file uploads
-    if (req.files && req.files.attachments) {
-      const attachments = Array.isArray(req.files.attachments) 
-        ? req.files.attachments 
-        : [req.files.attachments];
-
-      rfqData.attachments = await Promise.all(
-        attachments.map(async (file) => {
-          const fileUrl = await uploadToCloudinary(
-            file.path, 
-            req.user._id.toString()
-          );
-          return {
-            fileName: file.originalname,
-            fileUrl
-          };
-        })
-      );
+    try {
+      const { title, items, summary = '' } = req.body;
+ 
+      // Ensure items is parsed if it's a string and validate its structure
+      const parsedItems = typeof items === 'string' 
+        ? JSON.parse(items) 
+        : (items || []);
+ 
+      // Validate that each item has all required fields
+      const validatedItems = parsedItems.map(item => ({
+        itemName: item.itemName,
+        quantity: item.quantity,
+        unit: item.unit,
+        specifications: item.specifications
+      }));
+ 
+      // Create RFQ object
+      const rfqData = {
+        title,
+        items: validatedItems,
+        createdBy: req.user._id,
+        summary,
+        status: 'Draft'
+      };
+ 
+      // Handle file uploads
+      if (req.files && req.files.attachments) {
+        const attachments = Array.isArray(req.files.attachments)
+           ? req.files.attachments
+           : [req.files.attachments];
+ 
+        rfqData.attachments = await Promise.all(
+          attachments.map(async (file) => {
+            const fileUrl = await uploadToCloudinary(
+              file.path,
+              req.user._id.toString()
+            );
+            return {
+              fileName: file.originalname,
+              fileUrl
+            };
+          })
+        );
+      }
+ 
+      // Create and save RFQ
+      const rfq = await RFQ.create(rfqData);
+ 
+      res.status(201).json({
+        message: 'RFQ created successfully',
+        rfq
+      });
+    } catch (error) {
+      console.error('RFQ Creation Error:', error);
+      res.status(400).json({
+        message: error.message || 'RFQ creation failed',
+        details: error.errors // This can help debug validation errors
+      });
     }
-
-    // Create and save RFQ
-    const rfq = await RFQ.create(rfqData);
-
-    res.status(201).json({
-      message: 'RFQ created successfully',
-      rfq
-    });
-  } catch (error) {
-    console.error('RFQ Creation Error:', error);
-    res.status(400).json({ 
-      message: error.message || 'RFQ creation failed' 
-    });
-  }
-};
-
+ };
 // @desc    Get all RFQs for the user
 // @route   GET /api/rfq
 export const getAllRFQs = async (req, res) => {

@@ -24,39 +24,43 @@ const RFQItemSchema = new mongoose.Schema({
 });
 
 const RFQSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: [true, 'RFQ title is required'],
-    trim: true
-  },
-  items: [RFQItemSchema],
-  attachments: [{
-    fileName: String,
-    fileUrl: String
-  }],
-  summary: {
-    type: String,
-    trim: true // Optional field for a brief RFQ summary
-  },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  status: {
-    type: String,
-    enum: ['Draft', 'Published', 'Closed'],
-    default: 'Draft', // Default status is 'Draft'
-    required: true // Ensures status is always present
-  },
-  publishedAt: {
-    type: Date
-  },
-  closedAt: {
-    type: Date
-  }
-}, {
-  timestamps: true
-});
+    title: {
+      type: String,
+      required: [true, 'RFQ title is required'],
+      trim: true
+    },
+    items: [RFQItemSchema],
+    attachments: [{
+      fileName: String,
+      fileUrl: String
+    }],
+    summary: {
+      type: String,
+      trim: true // Optional field for a brief RFQ summary
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    status: {
+      type: String,
+      enum: ['Draft', 'Published', 'Closed'],
+      default: 'Draft'
+    },
+    publishedAt: {
+      type: Date
+    },
+    closedAt: {
+      type: Date
+    },
+    negotiations: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Negotiation'
+    }]
+  }, {
+    timestamps: true
+  });
+  
 
 export default mongoose.model('RFQ', RFQSchema);
