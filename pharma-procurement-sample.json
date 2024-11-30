@@ -1,0 +1,145 @@
+{
+    "info": {
+      "_postman_id": "pharma-procurement-sample",
+      "name": "Pharma Procurement Backend",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "Authentication",
+        "item": [
+          {
+            "name": "Register Healthcare Facility",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "formdata",
+                "formdata": [
+                  { "key": "accountType", "value": "Healthcare Facility", "type": "text" },
+                  { "key": "businessName", "value": "St. Mary's Hospital", "type": "text" },
+                  { "key": "location", "value": "Nairobi, Kenya", "type": "text" },
+                  { "key": "taxId", "value": "TAX-HF-001", "type": "text" },
+                  { "key": "email", "value": "admin@stmarys.com", "type": "text" },
+                  { "key": "password", "value": "StMarys2024!", "type": "text" },
+                  { "key": "registrationCertificate", "type": "file", "src": "/path/to/hospital-registration.pdf" },
+                  { "key": "taxIdCertificate", "type": "file", "src": "/path/to/tax-certificate.pdf" }
+                ]
+              },
+              "url": {
+                "raw": "{{base_url}}/api/auth/register",
+                "host": ["{{base_url}}"],
+                "path": ["api", "auth", "register"]
+              }
+            }
+          },
+          {
+            "name": "Register Supplier",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "formdata",
+                "formdata": [
+                  { "key": "accountType", "value": "Supplier", "type": "text" },
+                  { "key": "businessName", "value": "MedSupply Pharmaceuticals", "type": "text" },
+                  { "key": "location", "value": "Mombasa, Kenya", "type": "text" },
+                  { "key": "taxId", "value": "TAX-SUP-001", "type": "text" },
+                  { "key": "email", "value": "sales@medsupply.com", "type": "text" },
+                  { "key": "password", "value": "MedSupply2024!", "type": "text" },
+                  { "key": "registrationCertificate", "type": "file", "src": "/path/to/supplier-registration.pdf" },
+                  { "key": "taxIdCertificate", "type": "file", "src": "/path/to/supplier-tax-certificate.pdf" }
+                ]
+              },
+              "url": {
+                "raw": "{{base_url}}/api/auth/register",
+                "host": ["{{base_url}}"],
+                "path": ["api", "auth", "register"]
+              }
+            }
+          },
+          {
+            "name": "Login Healthcare Facility",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\"email\":\"admin@stmarys.com\",\"password\":\"StMarys2024!\"}"
+              },
+              "url": {
+                "raw": "{{base_url}}/api/auth/login",
+                "host": ["{{base_url}}"],
+                "path": ["api", "auth", "login"]
+              }
+            }
+          },
+          {
+            "name": "Login Supplier",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\"email\":\"sales@medsupply.com\",\"password\":\"MedSupply2024!\"}"
+              },
+              "url": {
+                "raw": "{{base_url}}/api/auth/login",
+                "host": ["{{base_url}}"],
+                "path": ["api", "auth", "login"]
+              }
+            }
+          },
+          {
+            "name": "Forgot Password",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\"email\":\"admin@stmarys.com\"}"
+              },
+              "url": {
+                "raw": "{{base_url}}/api/auth/forgot-password",
+                "host": ["{{base_url}}"],
+                "path": ["api", "auth", "forgot-password"]
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "variable": [
+      {
+        "key": "base_url",
+        "value": "http://localhost:5000",
+        "type": "string"
+      }
+    ]
+  }
+  
