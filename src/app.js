@@ -29,6 +29,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev')); // Logs HTTP requests in 'dev' format
 
+// Configure CORS to allow your frontend origin
+app.use(cors({
+  origin: 'http://localhost:5173', // Your frontend URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/rfqs', rfqRoutes);

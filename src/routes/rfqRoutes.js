@@ -7,6 +7,7 @@ import {
   deleteRFQ,
   publishRFQ,
   removeAttachment,
+  getPublishedRFQs
 
 } from '../controllers/rfqController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
@@ -20,14 +21,19 @@ const upload = multer({
 
 const router = express.Router();
 
-// RFQ routes with file upload middleware
-router.route('/createRfq')
-  .post(
-    authMiddleware,
-    upload.fields([{ name: 'attachments', maxCount: 5 }]),
-    createRFQ
-  )
-  .get(authMiddleware, getAllRFQs);
+// Separate routes for creating RFQ
+router.post('/createRfq', 
+  authMiddleware,
+  upload.fields([{ name: 'attachments', maxCount: 5 }]),
+  createRFQ
+);
+
+router.get('/getMyRfqs', 
+  authMiddleware, 
+  getAllRFQs
+);
+
+router.get('/suppliers', authMiddleware, getPublishedRFQs);
 
 router.route('/:id')
   .get(authMiddleware, getRFQById)
@@ -43,6 +49,7 @@ router.patch('/:id/publish', authMiddleware, publishRFQ);
 
 // Remove attachment route
 router.delete('/:id/attachments/:attachmentId', authMiddleware, removeAttachment);
+
 
 
 

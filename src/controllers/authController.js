@@ -118,12 +118,15 @@ export const loginUser = async (req, res) => {
         });
       }
 
+      // Return response in the desired format
       res.json({
         message: 'Login successful.',
-        _id: user._id,
-        businessName: user.businessName,
-        email: user.email,
-        accountType: user.accountType,
+        user: {
+          _id: user._id,
+          businessName: user.businessName,
+          email: user.email,
+          accountType: user.accountType,
+        },
         token: generateToken(user._id),
       });
     } else {
@@ -138,34 +141,59 @@ export const loginUser = async (req, res) => {
 
 // @desc Verify email
 // @route GET /api/auth/verify-email/:token
+// @desc Verify email
+// @route GET /api/auth/verify-email/:token
 export const verifyEmail = async (req, res) => {
   try {
     const { token } = req.params;
 
+    // Check if the token exists in the request parameters
+    if (!token) {
+      return res.status(400).json({
+        message: 'Verification token is missing.',
+      });
+    }
+
+    // Find the user associated with the token
     const user = await User.findOne({
       emailVerificationToken: token,
       emailVerificationTokenExpires: { $gt: Date.now() },
     });
 
+    // If user is not found or token has expired, return error
     if (!user) {
       return res.status(400).json({
         message: 'Verification failed. The token is invalid or has expired.',
       });
     }
 
+    // If user is already verified, return a message
+    if (user.isVerified) {
+      return res.status(200).json({
+        message: 'Email is already verified.',
+      });
+    }
+
+    // Set user as verified and remove the verification token
     user.isVerified = true;
     user.emailVerificationToken = undefined;
     user.emailVerificationTokenExpires = undefined;
 
+    // Save the user with updated status
     await user.save();
 
-    res.json({ message: 'Email verified successfully.' });
+    // Return a success response
+    res.status(200).json({
+      message: 'Email verified successfully.',
+    });
   } catch (error) {
-    res.status(400).json({
+    // Error handling: Provide meaningful message
+    res.status(500).json({
       message: error.message || 'Email verification failed. Please try again later.',
     });
   }
 };
+
 
 // @desc Forgot password
 // @route POST /api/auth/forgot-password

@@ -91,12 +91,26 @@ export const createRFQ = async (req, res) => {
 // @route   GET /api/rfq
 export const getAllRFQs = async (req, res) => {
   try {
-    const rfqs = await RFQ.find({ createdBy: req.user._id })
-      .sort({ createdAt: -1 });
+    // Extract pagination parameters from the request query, with defaults
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
 
+    // Fetch RFQs with pagination and count the total number of RFQs
+    const [rfqs, total] = await Promise.all([
+      RFQ.find({ createdBy: req.user._id })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      RFQ.countDocuments({ createdBy: req.user._id }),
+    ]);
+
+    // Respond with the paginated RFQs, total count, page, and limit
     res.json({
-      count: rfqs.length,
-      rfqs
+      rfqs,
+      total,
+      page,
+      limit,
     });
   } catch (error) {
     res.status(400).json({ 
@@ -104,6 +118,7 @@ export const getAllRFQs = async (req, res) => {
     });
   }
 };
+
 
 // @desc    Get single RFQ by ID
 // @route   GET /api/rfq/:id
@@ -269,6 +284,40 @@ export const removeAttachment = async (req, res) => {
   } catch (error) {
     res.status(400).json({ 
       message: error.message || 'Attachment removal failed' 
+    });
+  }
+};
+
+
+// @desc    Get all published RFQs for suppliers
+// @route   GET /api/rfq/suppliers
+export const getPublishedRFQs = async (req, res) => {
+  try {
+    // Extract pagination parameters from the request query, with defaults
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    // Fetch published RFQs with pagination and count the total number of published RFQs
+    const [rfqs, total] = await Promise.all([
+      RFQ.find({ status: 'Published' })
+        .select('-createdBy') // Exclude the creator's ID for privacy
+        .sort({ publishedAt: -1 }) // Sort by most recently published first
+        .skip(skip)
+        .limit(limit),
+      RFQ.countDocuments({ status: 'Published' }),
+    ]);
+
+    // Respond with the paginated published RFQs, total count, page, and limit
+    res.json({
+      rfqs,
+      total,
+      page,
+      limit,
+    });
+  } catch (error) {
+    res.status(400).json({ 
+      message: error.message || 'Failed to retrieve published RFQs' 
     });
   }
 };
