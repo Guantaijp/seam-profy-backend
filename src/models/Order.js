@@ -2,6 +2,11 @@ import mongoose from 'mongoose';
 
 const orderSchema = new mongoose.Schema(
   {
+    orderNumber: {
+      type: String,
+      required: true,
+      unique: true,  // Ensure the orderNumber is unique
+    },
     rfqId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'RFQ',
@@ -14,8 +19,8 @@ const orderSchema = new mongoose.Schema(
     },
     supplierId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Supplier',
-      required: true,
+      ref: 'User',  // Reference to User model (not Supplier)
+      required: true
     },
     healthFacilityId: {
       type: mongoose.Schema.Types.ObjectId,

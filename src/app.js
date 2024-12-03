@@ -10,7 +10,7 @@ import morgan from 'morgan'; // For logging HTTP requests
 import authRoutes from './routes/authRoutes.js';
 import rfqRoutes from './routes/rfqRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
-import negotiateRoute from './routes/negotiateRoutes.js'
+import negotiateRoutes from './routes/negotiateRoutes.js'
 // Middleware imports
 import errorMiddleware from './middleware/errorMiddleware.js';
 // Utility imports
@@ -40,7 +40,7 @@ app.use(cors({
 app.use('/api/auth', authRoutes);
 app.use('/api/rfqs', rfqRoutes);
 app.use('/api/orders', orderRoutes);
-app.use('/api/negotiate',negotiateRoute)
+app.use('/api/negotiate',negotiateRoutes)
 
 
 

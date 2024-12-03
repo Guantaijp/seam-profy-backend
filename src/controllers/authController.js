@@ -15,11 +15,14 @@ cloudinary.config({
   api_secret: envConfig.CLOUDINARY_API_SECRET,
 });
 
-// Generate JWT Token
-const generateToken = (id) => {
-  return jwt.sign({ id }, envConfig.JWT_SECRET, {
-    expiresIn: envConfig.JWT_EXPIRES_IN,
-  });
+const generateToken = (userId) => {
+  return jwt.sign(
+    { id: userId }, 
+    envConfig.JWT_SECRET, 
+    { 
+      expiresIn: '30d' // Token expires in 1 day
+    }
+  );
 };
 
 // Helper function to upload image to Cloudinary
@@ -109,16 +112,26 @@ export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ 
+        message: 'Please provide email and password' 
+      });
+    }
+
     const user = await User.findOne({ email });
 
     if (user && (await user.comparePassword(password))) {
+      // Email verification check
       if (!user.isVerified) {
         return res.status(403).json({
           message: 'Your email is not verified. Please verify your email to log in.',
         });
       }
 
-      // Return response in the desired format
+      // Generate token
+      const token = generateToken(user._id);
+
       res.json({
         message: 'Login successful.',
         user: {
@@ -127,18 +140,21 @@ export const loginUser = async (req, res) => {
           email: user.email,
           accountType: user.accountType,
         },
-        token: generateToken(user._id),
+        token, // Ensure token is included in the response
       });
     } else {
-      res.status(401).json({ message: 'Invalid email or password.' });
+      res.status(401).json({ 
+        message: 'Invalid email or password.' 
+      });
     }
   } catch (error) {
-    res.status(400).json({
-      message: error.message || 'Login failed. Please try again later.',
+    console.error('Login Error:', error);
+    res.status(500).json({
+      message: 'Login failed. Please try again later.',
+      error: error.message
     });
   }
 };
-
 // @desc Verify email
 // @route GET /api/auth/verify-email/:token
 // @desc Verify email

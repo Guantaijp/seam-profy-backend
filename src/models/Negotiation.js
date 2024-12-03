@@ -31,6 +31,11 @@ const NegotiationSchema = new mongoose.Schema({
     ref: 'User', // Assuming User model is where the suppliers are stored
     required: [true, 'Supplier ID is required']
   },
+  healthFacilityId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User', // Assuming User model is used for health facilities
+    required: [true, 'Health Facility ID is required']
+  },
   items: [NegotiationItemSchema],
   totalQuotePrice: {
     type: Number,
