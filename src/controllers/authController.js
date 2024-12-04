@@ -276,3 +276,38 @@ export const resetPassword = async (req, res) => {
     });
   }
 };
+
+
+// @desc Get logged-in user details
+// @route GET /api/auth/me
+export const getUserProfile = async (req, res) => {
+  try {
+    // The authMiddleware will attach the user to req.user
+    // We'll exclude sensitive information like password
+    const user = await User.findById(req.user._id).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ 
+        message: 'User not found.' 
+      });
+    }
+
+    res.json({
+      _id: user._id,
+      accountType: user.accountType,
+      businessName: user.businessName,
+      email: user.email,
+      location: user.location,
+      taxId: user.taxId,
+      registrationCertificate: user.registrationCertificate,
+      taxIdCertificate: user.taxIdCertificate,
+      isVerified: user.isVerified
+    });
+  } catch (error) {
+    console.error('Get User Profile Error:', error);
+    res.status(500).json({
+      message: 'Unable to retrieve user profile.',
+      error: error.message
+    });
+  }
+};
