@@ -20,12 +20,12 @@ export const sendVerificationEmail = async (email, verificationToken, businessNa
   const verificationLink = `${process.env.FRONTEND_URL}/api/auth/verify-email/${verificationToken}`;
 
   const mailOptions = {
-    from: `"Pharma Procurement" <${process.env.EMAIL_USERNAME}>`, // Gmail email
+    from: `"SeamProfy" <${process.env.EMAIL_USERNAME}>`, // Gmail email
     to: email,
-    subject: 'Verify Your Email - Pharma Procurement',
+    subject: 'Verify Your Email - SeamProfy',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Welcome to Pharma Procurement, ${businessName}!</h2>
+        <h2>Welcome to SeamProfy, ${businessName}!</h2>
         <p>Thank you for registering. Please verify your email address by clicking the button below:</p>
         <a href="${verificationLink}" style="
           display: inline-block; 
@@ -64,9 +64,9 @@ export const sendPasswordResetEmail = async (email, resetToken, businessName) =>
   const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
   const mailOptions = {
-    from: `"Pharma Procurement" <${process.env.EMAIL_USERNAME}>`, // Gmail email
+    from: `"SeamProfy" <${process.env.EMAIL_USERNAME}>`, // Gmail email
     to: email,
-    subject: 'Password Reset Request - Pharma Procurement',
+    subject: 'Password Reset Request - SeamProfy',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>Password Reset Request, ${businessName}</h2>
