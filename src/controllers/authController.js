@@ -83,6 +83,7 @@ export const registerUser = async (req, res) => {
       taxIdCertificate: taxIdCertificateUrl,
       emailVerificationToken,
       emailVerificationTokenExpires,
+      isVerified: true,
     });
 
     await sendVerificationEmail(
