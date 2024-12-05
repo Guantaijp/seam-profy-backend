@@ -45,6 +45,7 @@ export const registerUser = async (req, res) => {
   try {
     const { accountType, businessName, location, taxId, email, password } = req.body;
 
+    // Check if the user already exists
     const existingUser = await User.findOne({ $or: [{ email }, { taxId }] });
 
     if (existingUser) {
@@ -53,25 +54,28 @@ export const registerUser = async (req, res) => {
         .json({ message: 'A user with this email or tax ID already exists.' });
     }
 
+    // Validate file uploads
     if (!req.files || !req.files.registrationCertificate || !req.files.taxIdCertificate) {
       return res
         .status(400)
         .json({ message: 'Registration and Tax ID certificates are required.' });
     }
 
+    // Upload files to cloud storage
     const registrationCertificateUrl = await uploadToCloudinary(
       req.files.registrationCertificate[0].path,
       'registration-certificates'
     );
-
     const taxIdCertificateUrl = await uploadToCloudinary(
       req.files.taxIdCertificate[0].path,
       'tax-id-certificates'
     );
 
+    // Generate email verification token
     const emailVerificationToken = crypto.randomBytes(32).toString('hex');
     const emailVerificationTokenExpires = Date.now() + 3600000; // 1 hour
 
+    // Create the new user
     const user = await User.create({
       accountType,
       businessName,
@@ -86,26 +90,35 @@ export const registerUser = async (req, res) => {
       // isVerified: true,
     });
 
+    // Send verification email
     await sendVerificationEmail(
       user.email,
       emailVerificationToken,
       user.businessName
     );
 
+    // Generate token
+    const token = generateToken(user._id);
+
+    // Return response
     res.status(201).json({
       message: 'Registration successful. Please check your email to verify your account.',
-      _id: user._id,
-      businessName: user.businessName,
-      email: user.email,
-      token: generateToken(user._id),
+      user: {
+        _id: user._id,
+        businessName: user.businessName,
+        email: user.email,
+        accountType: user.accountType,
+      },
+      token,
     });
   } catch (error) {
     console.error('Registration Error:', error);
-    res.status(400).json({
+    res.status(500).json({
       message: error.message || 'Registration failed. Please try again later.',
     });
   }
 };
+
 
 // @desc Authenticate user
 // @route POST /api/auth/login
