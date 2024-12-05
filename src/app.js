@@ -29,12 +29,25 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev')); // Logs HTTP requests in 'dev' format
 
-// Configure CORS to allow your frontend origin
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://pharma-procurement.vercel.app'
+];
+
 app.use(cors({
-  origin: 'http://localhost:5173', // Your frontend URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: (origin, callback) => {
+    // Check if the incoming origin is in the allowed list or undefined (for non-browser clients)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: '*', // Allow all HTTP methods
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true // Enable credentials if required for cookies/auth
 }));
+
 
 // Routes
 app.use('/api/auth', authRoutes);
