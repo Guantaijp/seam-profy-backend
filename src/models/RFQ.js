@@ -54,6 +54,17 @@ const RFQSchema = new mongoose.Schema({
     ],
     default: 'Draft'
   },
+  expiryDate: {
+    type: Date,
+    required: [true, 'Expiry date is required for the RFQ'],
+    validate: {
+      validator: function(value) {
+        // Ensure expiry date is in the future
+        return value > new Date();
+      },
+      message: 'Expiry date must be in the future'
+    }
+  },
   publishedAt: {
     type: Date
   },
@@ -72,5 +83,31 @@ const RFQSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Pre-save middleware to update status based on expiry date
+RFQSchema.pre('save', function(next) {
+  const now = new Date();
+
+  // If RFQ is published and has expired
+  if (this.status === 'Published' && this.expiryDate < now) {
+    this.status = 'Closed';
+    this.closedAt = now;
+  }
+
+  next();
+});
+
+// Method to check if RFQ is expired
+RFQSchema.methods.isExpired = function() {
+  return this.expiryDate < new Date();
+};
+
+// Static method to find active RFQs
+RFQSchema.statics.findActiveRFQs = function() {
+  return this.find({
+    status: 'Published',
+    expiryDate: { $gt: new Date() }
+  });
+};
 
 export default mongoose.model('RFQ', RFQSchema);

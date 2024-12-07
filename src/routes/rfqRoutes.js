@@ -7,8 +7,9 @@ import {
   deleteRFQ,
   publishRFQ,
   removeAttachment,
-  getPublishedRFQs
-
+  getPublishedRFQs,
+  getHealthFacilityRequests,
+  getSupplierRequests
 } from '../controllers/rfqController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import multer from 'multer';
@@ -34,6 +35,8 @@ router.get('/getMyRfqs',
 );
 
 router.get('/suppliers', authMiddleware, getPublishedRFQs);
+router.get('/getHealthFacilityRequests', authMiddleware, getHealthFacilityRequests);
+router.get('/getSupplierRequests', authMiddleware, getSupplierRequests);
 
 router.route('/:id')
   .get(authMiddleware, getRFQById)
@@ -49,8 +52,6 @@ router.patch('/:id/publish', authMiddleware, publishRFQ);
 
 // Remove attachment route
 router.delete('/:id/attachments/:attachmentId', authMiddleware, removeAttachment);
-
-
 
 
 export default router;
