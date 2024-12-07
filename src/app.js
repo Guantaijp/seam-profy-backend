@@ -11,6 +11,7 @@ import authRoutes from './routes/authRoutes.js';
 import rfqRoutes from './routes/rfqRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import negotiateRoutes from './routes/negotiateRoutes.js'
+import productRoutes from './routes/productRoutes.js';
 // Middleware imports
 import errorMiddleware from './middleware/errorMiddleware.js';
 // Utility imports
