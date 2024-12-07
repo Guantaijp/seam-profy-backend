@@ -31,6 +31,11 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    paymentStatus: {
+      type: String,
+      enum: ['Pending', 'Invoiced', 'Paid', 'Overdue'],
+      default: 'Pending'
+    },
     deliveryDetails: {
       address: { type: String, required: true },
       deliveryDate: { type: Date, required: true },

@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Order from '../models/Order.js'; // Assuming you have an Order model
 import Counter from '../models/Counter.js'; // Ensure the Counter model is imported
+import Negotiation from '../models/Negotiation.js'; // Import Negotiation model
 
 const getNextOrderNumber = async () => {
   try {
@@ -19,6 +20,9 @@ const getNextOrderNumber = async () => {
 };
 
 export const createOrder = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { rfqId, supplierId, negotiationId, deliveryDetails, totalPrice } = req.body;
 
@@ -39,19 +43,46 @@ export const createOrder = async (req, res) => {
       rfqId,
       supplierId,
       negotiationId,
-      healthFacilityId: req.user._id,  // Assuming user is set from auth middleware
+      healthFacilityId: req.user._id,
       deliveryDetails,
       totalPrice,
     });
 
+    // Update the negotiation status
+    const updatedNegotiation = await Negotiation.findByIdAndUpdate(
+      negotiationId,
+      { 
+        negotiationStatus: 'Completed',
+        status: 'Accepted'
+      },
+      { new: true, session }
+    );
+
+    if (!updatedNegotiation) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({
+        message: 'Negotiation not found',
+      });
+    }
+
     // Save the order to the database
-    await newOrder.save();
+    await newOrder.save({ session });
+
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
 
     res.status(201).json({
       message: 'Order created successfully',
       order: newOrder,
+      negotiation: updatedNegotiation,
     });
   } catch (error) {
+    // Abort the transaction in case of an error
+    await session.abortTransaction();
+    session.endSession();
+
     console.error('Error creating order:', error);
 
     if (error.code === 11000) {
@@ -68,6 +99,7 @@ export const createOrder = async (req, res) => {
     });
   }
 };
+
 // Get orders for a health facility
 export const getHealthFacilityOrders = async (req, res) => {
   try {

@@ -77,6 +77,8 @@ export const negotiateRFQ = async (req, res) => {
     });
   }
 };
+
+
 // @desc    Get Negotiations for an RFQ
 // @route   GET /api/rfq/:id/negotiations
 export const getNegotiationsForRFQ = async (req, res) => {

@@ -12,6 +12,7 @@ import rfqRoutes from './routes/rfqRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import negotiateRoutes from './routes/negotiateRoutes.js'
 import productRoutes from './routes/productRoutes.js';
+import paymentsRoutes from './routes/paymentsRoutes.js';
 // Middleware imports
 import errorMiddleware from './middleware/errorMiddleware.js';
 // Utility imports
@@ -55,6 +56,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/rfqs', rfqRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/negotiate',negotiateRoutes)
+app.use('/api/payments', paymentsRoutes)
 
 
 
