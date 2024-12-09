@@ -33,7 +33,10 @@ export const createProduct = asyncHandler(async (req, res) => {
   });
 
   const createdProduct = await product.save();
-  res.status(201).json(createdProduct);
+  res.status(201).json({
+    message: 'Product created successfully',
+    product: createdProduct
+  });
 });
 
 // @desc    Get all products
@@ -72,6 +75,7 @@ export const getProducts = asyncHandler(async (req, res) => {
   const total = await Product.countDocuments(query);
 
   res.json({
+    message: 'Products retrieved successfully',
     products,
     totalPages: Math.ceil(total / limit),
     currentPage: page
@@ -83,7 +87,10 @@ export const getProducts = asyncHandler(async (req, res) => {
 // @access  Private (Supplier only)
 export const getMyProducts = asyncHandler(async (req, res) => {
   const products = await Product.find({ supplier: req.user._id });
-  res.json(products);
+  res.json({
+    message: 'Your products retrieved successfully',
+    products
+  });
 });
 
 // @desc    Get product by ID
@@ -97,7 +104,10 @@ export const getProductById = asyncHandler(async (req, res) => {
     throw new Error('Product not found');
   }
 
-  res.json(product);
+  res.json({
+    message: 'Product details retrieved successfully',
+    product
+  });
 });
 
 // @desc    Update a product
@@ -131,7 +141,10 @@ export const updateProduct = asyncHandler(async (req, res) => {
   product.storageConditions = req.body.storageConditions || product.storageConditions;
 
   const updatedProduct = await product.save();
-  res.json(updatedProduct);
+  res.json({
+    message: 'Product updated successfully',
+    product: updatedProduct
+  });
 });
 
 // @desc    Delete a product
@@ -152,7 +165,9 @@ export const deleteProduct = asyncHandler(async (req, res) => {
   }
 
   await product.deleteOne();
-  res.json({ message: 'Product removed' });
+  res.json({
+    message: 'Product removed successfully'
+  });
 });
 
 // @desc    Get products nearing expiry
@@ -171,5 +186,8 @@ export const getExpiringProducts = asyncHandler(async (req, res) => {
     supplier: req.user._id // Only for the current supplier
   }).sort({ expiryDate: 1 });
 
-  res.json(expiringProducts);
+  res.json({
+    message: 'Expiring products retrieved successfully',
+    expiringProducts
+  });
 });

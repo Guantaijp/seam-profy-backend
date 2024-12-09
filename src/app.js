@@ -56,6 +56,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/rfqs', rfqRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/negotiate',negotiateRoutes)
+app.use('/api/products',productRoutes)
 app.use('/api/payments', paymentsRoutes)
 
 
