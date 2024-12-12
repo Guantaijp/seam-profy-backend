@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const invoiceSchema = new mongoose.Schema({
   order: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true },
   invoiceNumber: { type: String, required: true },
+  // invoiceDate:{ type: Date, required: true },
   totalAmount: { type: Number, required: true },
   taxAmount: { type: Number, required: true },
   netAmount: { type: Number, required: true },
@@ -14,7 +15,11 @@ const invoiceSchema = new mongoose.Schema({
   },
   orderDetails: {
     orderNumber: { type: String, required: true },
-    rfqId: { type: mongoose.Schema.Types.ObjectId, ref: 'RFQ' },
+    rfqId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'RFQ',
+      required: true,
+    },
     supplierId: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },
     negotiationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Negotiation' },
     deliveryDetails: { type: Object, required: true },

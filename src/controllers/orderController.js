@@ -53,41 +53,32 @@ export const createOrder = async (req, res) => {
     const orderNumber = await getNextOrderNumber();
     const invoiceNumber = await getNextInvoiceNumber();
 
-   // Fetch the full negotiation details with populated supplier and RFQ
-   const negotiation = await Negotiation.findById(negotiationId)
-   .populate({
-     path: 'supplierId',
-     select: 'businessName email phoneNumber location accountType'
-   })
-   .populate({
-     path: 'rfqId',
-     select: 'title summary'
-   });
-   // Manually populate items to avoid model registration issues
-   const populatedItems = await Promise.all(
-    negotiation.items.map(async (item) => {
-      try {
-        const rfqItem = await rfqItem.findById(item.itemId).select('itemName specifications unit quantity');
-        return {
-          itemId: item.itemId,
-          itemName: rfqItem?.itemName || 'Unknown Item',
-          itemSpecifications: rfqItem?.specifications || 'No specifications',
-          itemUnit: rfqItem?.unit || 'N/A',
-          quotedPrice: item.quotedPrice,
-          quantity: item.quantity,
-          originalQuantity: rfqItem?.quantity || item.quantity
-        };
-      } catch (err) {
-        console.error(`Error populating item ${item.itemId}:`, err);
-        return {
-          itemId: item.itemId,
-          itemName: 'Error Retrieving Item',
-          quotedPrice: item.quotedPrice,
-          quantity: item.quantity
-        };
-      }
+    const negotiation = await Negotiation.findById(negotiationId)
+    .populate({
+      path: 'supplierId',
+      select: 'businessName email phoneNumber location accountType'
     })
-  );
+    .populate({
+      path: 'rfqId',
+      select: 'title summary items'  // Include items in the population
+    });
+  
+  // Manually populate items
+  const populatedItems = negotiation.items.map((item) => {
+    const rfqItem = negotiation.rfqId.items.find(
+      rfqItem => rfqItem._id.toString() === item.itemId.toString()
+    );
+  
+    return {
+      itemId: item.itemId,
+      itemName: rfqItem?.itemName || 'Unknown Item',
+      itemSpecifications: rfqItem?.specifications || 'No specifications',
+      itemUnit: rfqItem?.unit || 'N/A',
+      quotedPrice: item.quotedPrice,
+      quantity: item.quantity,
+      originalQuantity: rfqItem?.quantity || item.quantity
+    };
+  });
 
   if (!negotiation) {
     await session.abortTransaction();
@@ -142,6 +133,7 @@ export const createOrder = async (req, res) => {
         healthFacilityName: req.user.businessName,
         healthFacilityAddress: deliveryDetails.address,
       },
+      rfqId,
       orderDetails: {
         orderNumber: newOrder.orderNumber,
         rfqId: newOrder.rfqId,
