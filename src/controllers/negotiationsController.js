@@ -25,19 +25,8 @@ export const negotiateRFQ = async (req, res) => {
       return res.status(400).json({ message: 'Items are required' });
     }
 
-    items.forEach((item, index) => {
-      if (!item.itemId || !item.quotedPrice) {
-        return res.status(400).json({
-          message: `Item ${index + 1} is missing required fields (itemId, quotedPrice)`,
-        });
-      }
-    });
-
-    if (!totalQuotePrice || !deliveryTimeframe) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
-
     const rfq = await RFQ.findById(id);
+
     if (!rfq) {
       return res.status(404).json({ message: 'RFQ not found' });
     }
@@ -46,11 +35,36 @@ export const negotiateRFQ = async (req, res) => {
       return res.status(400).json({ message: 'RFQ is not available for negotiation' });
     }
 
+    // Validate items against the RFQ's items
+    const validatedItems = items.map((item, index) => {
+      const rfqItem = rfq.items.find(rfqItem => rfqItem._id.toString() === item.itemId);
+      if (!rfqItem) {
+        throw new Error(`Item ${index + 1} not found in RFQ`);
+      }
+      if (!item.quotedPrice) {
+        throw new Error(`Item ${index + 1} is missing the quoted price`);
+      }
+      if (!item.quantity || item.quantity <= 0) {
+        throw new Error(`Item ${index + 1} has an invalid or missing quantity`);
+      }
+    
+      return {
+        itemId: item.itemId,
+        itemName: rfqItem.itemName,
+        quantity: item.quantity,
+        quotedPrice: item.quotedPrice,
+      };
+    });
+    
+    if (!totalQuotePrice || !deliveryTimeframe) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
     const negotiation = new Negotiation({
       rfqId: id,
       supplierId: req.user._id,
       healthFacilityId: rfq.createdBy,
-      items,
+      items: validatedItems, // Use the validated items with item names
       totalQuotePrice,
       deliveryTimeframe,
       additionalNotes,
@@ -72,8 +86,6 @@ export const negotiateRFQ = async (req, res) => {
     console.error('Error during negotiation submission:', error);
     res.status(500).json({
       message: error.message || 'Failed to submit negotiation',
-      errorDetails: error,
-      stack: error.stack,
     });
   }
 };

@@ -3,7 +3,7 @@ import Order from '../models/Order.js'; // Assuming you have an Order model
 import Counter from '../models/Counter.js'; // Ensure the Counter model is imported
 import Negotiation from '../models/Negotiation.js';
 import Invoice from '../models/Invoice.js';
-
+import RFQ from '../models/RFQ.js';
 
 const getNextOrderNumber = async () => {
   try {
@@ -53,6 +53,49 @@ export const createOrder = async (req, res) => {
     const orderNumber = await getNextOrderNumber();
     const invoiceNumber = await getNextInvoiceNumber();
 
+   // Fetch the full negotiation details with populated supplier and RFQ
+   const negotiation = await Negotiation.findById(negotiationId)
+   .populate({
+     path: 'supplierId',
+     select: 'businessName email phoneNumber location accountType'
+   })
+   .populate({
+     path: 'rfqId',
+     select: 'title summary'
+   });
+   // Manually populate items to avoid model registration issues
+   const populatedItems = await Promise.all(
+    negotiation.items.map(async (item) => {
+      try {
+        const rfqItem = await rfqItem.findById(item.itemId).select('itemName specifications unit quantity');
+        return {
+          itemId: item.itemId,
+          itemName: rfqItem?.itemName || 'Unknown Item',
+          itemSpecifications: rfqItem?.specifications || 'No specifications',
+          itemUnit: rfqItem?.unit || 'N/A',
+          quotedPrice: item.quotedPrice,
+          quantity: item.quantity,
+          originalQuantity: rfqItem?.quantity || item.quantity
+        };
+      } catch (err) {
+        console.error(`Error populating item ${item.itemId}:`, err);
+        return {
+          itemId: item.itemId,
+          itemName: 'Error Retrieving Item',
+          quotedPrice: item.quotedPrice,
+          quantity: item.quantity
+        };
+      }
+    })
+  );
+
+  if (!negotiation) {
+    await session.abortTransaction();
+    session.endSession();
+    return res.status(404).json({
+      message: 'Negotiation not found',
+    });
+  }
     // Create the new order
     const newOrder = new Order({
       orderNumber,
@@ -62,10 +105,26 @@ export const createOrder = async (req, res) => {
       healthFacilityId: req.user._id,
       deliveryDetails,
       totalPrice,
-      paymentStatus: 'Invoiced'
+      paymentStatus: 'Invoiced',
+      negotiationDetails: {
+        deliveryTimeframe: negotiation.deliveryTimeframe,
+        additionalNotes: negotiation.additionalNotes,
+        totalQuotePrice: negotiation.totalQuotePrice,
+        items: populatedItems
+      },
+      rfqDetails: {
+        title: negotiation.rfqId?.title || 'Untitled RFQ',
+        summary: negotiation.rfqId?.summary || 'No summary provided'
+      },
+      supplierDetails: {
+        businessName: negotiation.supplierId.businessName,
+        email: negotiation.supplierId.email,
+        phoneNumber: negotiation.supplierId.phoneNumber,
+        location: negotiation.supplierId.location,
+        accountType: negotiation.supplierId.accountType
+      }
     });
-
-    // Calculate tax and net amount (using 10% tax rate as in the original invoice generation)
+    // Calculate tax and net amount (using 10% tax rate)
     const taxRate = 0.1;
     const taxAmount = totalPrice * taxRate;
     const netAmount = totalPrice + taxAmount;
@@ -80,11 +139,20 @@ export const createOrder = async (req, res) => {
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
       status: 'Generated',
       billingDetails: {
-        healthFacilityName: req.user.businessName, // Assuming user model has businessName
+        healthFacilityName: req.user.businessName,
         healthFacilityAddress: deliveryDetails.address,
-        supplierName: updatedNegotiation.supplierName, // Assuming this is part of negotiation details
-        supplierAddress: updatedNegotiation.supplierAddress
-      }
+      },
+      orderDetails: {
+        orderNumber: newOrder.orderNumber,
+        rfqId: newOrder.rfqId,
+        supplierId: newOrder.supplierId,
+        negotiationId: newOrder.negotiationId,
+        deliveryDetails: newOrder.deliveryDetails,
+        totalPrice: newOrder.totalPrice,
+        negotiationDetails: newOrder.negotiationDetails,
+        rfqDetails: newOrder.rfqDetails,
+        supplierDetails: newOrder.supplierDetails,
+      },
     });
 
     // Update the negotiation status
@@ -95,6 +163,16 @@ export const createOrder = async (req, res) => {
         status: 'Accepted'
       },
       { new: true, session }
+    );
+
+    // Update the RFQ status
+    await RFQ.findByIdAndUpdate(
+      rfqId,
+      {
+        status: 'Negotiated',
+        negotiationStatus: 'Completed'
+      },
+      { session }
     );
 
     if (!updatedNegotiation) {
@@ -115,7 +193,12 @@ export const createOrder = async (req, res) => {
 
     res.status(201).json({
       message: 'Order and Invoice created successfully',
-      order: newOrder,
+      order: {
+        ...newOrder.toObject(),
+        negotiationDetails: newOrder.negotiationDetails,
+        supplierDetails: newOrder.supplierDetails,
+        rfqDetails: newOrder.rfqDetails
+      },
       invoice: newInvoice,
       negotiation: updatedNegotiation,
     });
@@ -133,6 +216,7 @@ export const createOrder = async (req, res) => {
     });
   }
 };
+
 // Get orders for a health facility
 export const getHealthFacilityOrders = async (req, res) => {
   try {

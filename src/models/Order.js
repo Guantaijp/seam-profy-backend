@@ -17,6 +17,17 @@ const orderSchema = new mongoose.Schema(
       ref: 'Negotiation',
       required: true,
     },
+    negotiationDetails: {
+      deliveryTimeframe: String,
+      additionalNotes: String,
+      items: [{
+        itemId: { type: mongoose.Schema.Types.ObjectId, ref: 'RFQItem' },
+        itemName: String,
+        itemDescription: String,
+        quotedPrice: Number,
+        quantity: Number
+      }]
+    },
     supplierId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',  // Reference to User model (not Supplier)
@@ -45,6 +56,31 @@ const orderSchema = new mongoose.Schema(
       enum: ['Pending', 'Confirmed', 'Delivered', 'Cancelled'],
       default: 'Pending',
     },
+    negotiationDetails: {
+      deliveryTimeframe: String,
+      additionalNotes: String,
+      totalQuotePrice: Number,
+      items: [{
+        itemId: { type: mongoose.Schema.Types.ObjectId, ref: 'RFQItem' },
+        itemName: String,
+        itemSpecifications: String,
+        itemUnit: String,
+        quotedPrice: Number,
+        quantity: Number,
+        originalQuantity: Number
+      }]
+    },
+    rfqDetails: {
+      title: String,
+      summary: String
+    },
+    supplierDetails: {
+      businessName: String,
+      email: String,
+      phoneNumber: String,
+      location: String,
+      accountType: String
+    }
   },
   { timestamps: true }
 );

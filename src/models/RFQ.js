@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const RFQItemSchema = new mongoose.Schema({
+export const RFQItemSchema = new mongoose.Schema({
   itemName: {
     type: String,
     required: [true, 'Item name is required'],
@@ -20,8 +20,17 @@ const RFQItemSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Specifications are required'],
     trim: true
+  },
+  rfqId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'RFQ',
+    required: true
   }
+}, {
+  timestamps: true
 });
+
+
 
 const RFQSchema = new mongoose.Schema({
   title: {

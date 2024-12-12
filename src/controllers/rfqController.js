@@ -44,7 +44,7 @@ export const createRFQ = async (req, res) => {
     }
 
     // Validate that each item has all required fields
-    const validatedItems = parsedItems.map(item => ({
+    const validatedItems = parsedItems.map((item) => ({
       itemName: item.itemName,
       quantity: item.quantity,
       unit: item.unit,
@@ -69,7 +69,15 @@ export const createRFQ = async (req, res) => {
       status: 'Draft',
       expiryDate,
     };
-    console.log('RFQ Data:', rfqData);
+
+    // Save RFQ to get the generated rfqId
+    const rfq = new RFQ(rfqData);
+
+    // Assign rfqId to each item
+    rfq.items = rfq.items.map((item) => ({
+      ...item,
+      rfqId: rfq._id, // Assign the rfqId
+    }));
 
     // Handle file uploads
     if (req.files && req.files.attachments) {
@@ -77,7 +85,7 @@ export const createRFQ = async (req, res) => {
         ? req.files.attachments
         : [req.files.attachments];
 
-      rfqData.attachments = await Promise.all(
+      rfq.attachments = await Promise.all(
         attachments.map(async (file) => {
           try {
             const fileUrl = await uploadToCloudinary(file.path, req.user._id.toString());
@@ -92,8 +100,8 @@ export const createRFQ = async (req, res) => {
       );
     }
 
-    // Create and save RFQ
-    const rfq = await RFQ.create(rfqData);
+    // Save RFQ with updated items
+    await rfq.save();
 
     res.status(201).json({
       message: 'RFQ created successfully',
@@ -107,6 +115,7 @@ export const createRFQ = async (req, res) => {
     });
   }
 };
+
 
 // @desc    Get all RFQs for the user
 // @route   GET /api/rfq
