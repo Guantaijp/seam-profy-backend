@@ -1,21 +1,37 @@
 import mongoose from 'mongoose';
 import Order from '../models/Order.js'; // Assuming you have an Order model
 import Counter from '../models/Counter.js'; // Ensure the Counter model is imported
-import Negotiation from '../models/Negotiation.js'; // Import Negotiation model
+import Negotiation from '../models/Negotiation.js';
+import Invoice from '../models/Invoice.js';
+
 
 const getNextOrderNumber = async () => {
   try {
     const counter = await Counter.findOneAndUpdate(
       { sequenceName: 'orderNumber' },
       { $inc: { sequenceValue: 1 } },
-      { new: true, upsert: true } // Create the counter if it doesn't exist
+      { new: true, upsert: true }
     );
 
-    const orderNumber = `ORD-${counter.sequenceValue.toString().padStart(6, '0')}`;
-    return orderNumber;
+    return `ORD-${counter.sequenceValue.toString().padStart(6, '0')}`;
   } catch (error) {
     console.error('Error generating order number:', error);
     throw new Error('Failed to generate order number');
+  }
+};
+
+const getNextInvoiceNumber = async () => {
+  try {
+    const counter = await Counter.findOneAndUpdate(
+      { sequenceName: 'invoiceNumber' },
+      { $inc: { sequenceValue: 1 } },
+      { new: true, upsert: true }
+    );
+
+    return `INV-${counter.sequenceValue.toString().padStart(6, '0')}`;
+  } catch (error) {
+    console.error('Error generating invoice number:', error);
+    throw new Error('Failed to generate invoice number');
   }
 };
 
@@ -33,11 +49,11 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    // Generate the order number
+    // Generate order and invoice numbers
     const orderNumber = await getNextOrderNumber();
-    console.log("Generated Order Number:", orderNumber);
+    const invoiceNumber = await getNextInvoiceNumber();
 
-    // Create the new order with the generated order number
+    // Create the new order
     const newOrder = new Order({
       orderNumber,
       rfqId,
@@ -46,6 +62,29 @@ export const createOrder = async (req, res) => {
       healthFacilityId: req.user._id,
       deliveryDetails,
       totalPrice,
+      paymentStatus: 'Invoiced'
+    });
+
+    // Calculate tax and net amount (using 10% tax rate as in the original invoice generation)
+    const taxRate = 0.1;
+    const taxAmount = totalPrice * taxRate;
+    const netAmount = totalPrice + taxAmount;
+
+    // Create the corresponding invoice
+    const newInvoice = new Invoice({
+      order: newOrder._id,
+      invoiceNumber,
+      totalAmount: totalPrice,
+      taxAmount,
+      netAmount,
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      status: 'Generated',
+      billingDetails: {
+        healthFacilityName: req.user.businessName, // Assuming user model has businessName
+        healthFacilityAddress: deliveryDetails.address,
+        supplierName: updatedNegotiation.supplierName, // Assuming this is part of negotiation details
+        supplierAddress: updatedNegotiation.supplierAddress
+      }
     });
 
     // Update the negotiation status
@@ -66,16 +105,18 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    // Save the order to the database
+    // Save the order and invoice
     await newOrder.save({ session });
+    await newInvoice.save({ session });
 
     // Commit the transaction
     await session.commitTransaction();
     session.endSession();
 
     res.status(201).json({
-      message: 'Order created successfully',
+      message: 'Order and Invoice created successfully',
       order: newOrder,
+      invoice: newInvoice,
       negotiation: updatedNegotiation,
     });
   } catch (error) {
@@ -83,23 +124,15 @@ export const createOrder = async (req, res) => {
     await session.abortTransaction();
     session.endSession();
 
-    console.error('Error creating order:', error);
-
-    if (error.code === 11000) {
-      return res.status(409).json({
-        message: 'Duplicate order number detected. Please try again.',
-        errorDetails: error,
-      });
-    }
+    console.error('Error creating order and invoice:', error);
 
     res.status(500).json({
-      message: error.message || 'Failed to create order',
+      message: error.message || 'Failed to create order and invoice',
       errorDetails: error,
       stack: error.stack,
     });
   }
 };
-
 // Get orders for a health facility
 export const getHealthFacilityOrders = async (req, res) => {
   try {

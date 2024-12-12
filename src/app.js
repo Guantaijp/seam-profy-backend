@@ -13,6 +13,8 @@ import orderRoutes from './routes/orderRoutes.js';
 import negotiateRoutes from './routes/negotiateRoutes.js'
 import productRoutes from './routes/productRoutes.js';
 import paymentsRoutes from './routes/paymentsRoutes.js';
+import invoicesRoutes from './routes/invoiceRoutes.js';
+
 // Middleware imports
 import errorMiddleware from './middleware/errorMiddleware.js';
 // Utility imports
@@ -58,6 +60,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/negotiate',negotiateRoutes)
 app.use('/api/products',productRoutes)
 app.use('/api/payments', paymentsRoutes)
+app.use('/api/invoices', invoicesRoutes)
 
 
 
