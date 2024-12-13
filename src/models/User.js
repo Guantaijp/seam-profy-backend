@@ -41,6 +41,10 @@ const UserSchema = new mongoose.Schema({
     type: String, // Cloudinary URL
     required: true
   },
+  companyLogo: {
+    type: String, // Cloudinary URL
+    required: false
+  },
   isVerified: {
     type: Boolean,
     default: false

@@ -6,7 +6,8 @@ import {
   verifyEmail,
   forgotPassword,
   resetPassword,
-  getUserProfile
+  getUserProfile,
+  updateUserProfile
 } from '../controllers/authController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 
@@ -34,10 +35,21 @@ const uploadCertificates = upload.fields([
   { name: 'taxIdCertificate', maxCount: 1 }
 ]);
 
+const uploadUpdateFiles = upload.fields([   
+  { name: 'registrationCertificate', maxCount: 1 },   
+  { name: 'taxIdCertificate', maxCount: 1 },
+  { name: 'companyLogo', maxCount: 1 }
+]);
+
 router.post('/register', uploadCertificates, registerUser);
 router.post('/login', loginUser);
 router.get('/verify-email/:token', verifyEmail);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
 router.get('/me', authMiddleware, getUserProfile);
+router.put('/profile', 
+  authMiddleware, 
+  uploadUpdateFiles, 
+  updateUserProfile
+);
 export default router;

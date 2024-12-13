@@ -294,15 +294,16 @@ export const resetPassword = async (req, res) => {
 
 // @desc Get logged-in user details
 // @route GET /api/auth/me
+// @desc Get logged-in user details
+// @route GET /api/auth/me
 export const getUserProfile = async (req, res) => {
   try {
-    // The authMiddleware will attach the user to req.user
-    // We'll exclude sensitive information like password
+    // Fetch user details excluding the password
     const user = await User.findById(req.user._id).select('-password');
 
     if (!user) {
-      return res.status(404).json({ 
-        message: 'User not found.' 
+      return res.status(404).json({
+        message: 'User not found.',
       });
     }
 
@@ -315,12 +316,139 @@ export const getUserProfile = async (req, res) => {
       taxId: user.taxId,
       registrationCertificate: user.registrationCertificate,
       taxIdCertificate: user.taxIdCertificate,
-      isVerified: user.isVerified
+      companyLogo: user.companyLogo, // Include the company logo in the response
+      isVerified: user.isVerified,
     });
   } catch (error) {
     console.error('Get User Profile Error:', error);
     res.status(500).json({
       message: 'Unable to retrieve user profile.',
+      error: error.message,
+    });
+  }
+};
+
+
+
+// @desc Update user profile
+// @route PUT /api/auth/profile
+export const updateUserProfile = async (req, res) => {
+  try {
+    // Find the user by ID
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ 
+        message: 'User not found.' 
+      });
+    }
+
+    // Destructure all updatable fields
+    const { 
+      businessName, 
+      location, 
+      taxId,
+      email,
+      accountType
+    } = req.body;
+
+    // Update basic profile fields
+    if (businessName) user.businessName = businessName;
+    if (location) user.location = location;
+    
+    // Handle email update with unique check
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ 
+          message: 'Email is already in use by another account.' 
+        });
+      }
+      user.email = email;
+      user.isVerified = false; // Reset verification if email changes
+    }
+
+    // Handle tax ID update with unique check
+    if (taxId && taxId !== user.taxId) {
+      const existingUserWithTaxId = await User.findOne({ taxId });
+      if (existingUserWithTaxId) {
+        return res.status(400).json({ 
+          message: 'Tax ID is already in use by another account.' 
+        });
+      }
+      user.taxId = taxId;
+    }
+
+    // Update account type if provided
+    if (accountType) user.accountType = accountType;
+
+    // Handle file uploads to Cloudinary
+    const fileUploads = [
+      { 
+        field: 'registrationCertificate', 
+        folder: 'registration-certificates' 
+      },
+      { 
+        field: 'taxIdCertificate', 
+        folder: 'tax-id-certificates' 
+      },
+      { 
+        field: 'companyLogo', 
+        folder: 'company-logos' 
+      }
+    ];
+
+    
+    // Process each possible file upload
+    for (const upload of fileUploads) {
+      if (req.files && req.files[upload.field]) {
+        try {
+          const fileUrl = await uploadToCloudinary(
+            req.files[upload.field][0].path,
+            upload.folder
+          );
+          user[upload.field] = fileUrl;
+        } catch (uploadError) {
+          return res.status(400).json({ 
+            message: `${upload.field} upload failed.`,
+            error: uploadError.message 
+          });
+        }
+      }
+    }
+
+    // Optional: Password update
+    if (req.body.newPassword) {
+      // Verify current password first
+      const isMatch = await user.comparePassword(req.body.currentPassword);
+      if (!isMatch) {
+        return res.status(400).json({ 
+          message: 'Current password is incorrect.' 
+        });
+      }
+      user.password = req.body.newPassword;
+    }
+
+    // Save updated user
+    await user.save();
+
+    // Return updated user profile (excluding sensitive information)
+    res.json({
+      _id: user._id,
+      accountType: user.accountType,
+      businessName: user.businessName,
+      email: user.email,
+      location: user.location,
+      taxId: user.taxId,
+      companyLogo: user.companyLogo,
+      registrationCertificate: user.registrationCertificate,
+      taxIdCertificate: user.taxIdCertificate,
+      isVerified: user.isVerified
+    });
+  } catch (error) {
+    console.error('Update User Profile Error:', error);
+    res.status(500).json({
+      message: 'Unable to update user profile.',
       error: error.message
     });
   }
