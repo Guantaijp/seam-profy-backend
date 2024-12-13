@@ -256,3 +256,171 @@ export const getSupplierOrders = async (req, res) => {
     });
   }
 };
+
+
+
+export const getHealthFacilityMonthlyPurchases = async (req, res) => {
+  try {
+    // Aggregate monthly purchases for Health Facility
+    const monthlyPurchases = await Order.aggregate([
+      // Match orders for the specific health facility
+      { $match: { healthFacilityId: req.user._id } },
+      
+      // Extract month and year from createdAt
+      { $addFields: {
+        month: { $month: '$createdAt' },
+        year: { $year: '$createdAt' }
+      }},
+      
+      // Group by month and year, sum total purchases
+      { $group: {
+        _id: { 
+          month: '$month', 
+          year: '$year' 
+        },
+        totalAmount: { $sum: '$totalPrice' },
+        orderCount: { $sum: 1 }
+      }},
+      
+      // Sort by year and month
+      { $sort: { 
+        '_id.year': 1, 
+        '_id.month': 1 
+      }},
+      
+      // Transform for frontend consumption
+      { $project: {
+        _id: 0,
+        month: '$_id.month',
+        year: '$_id.year',
+        totalAmount: 1,
+        orderCount: 1,
+        monthName: {
+          $arrayElemAt: [
+            [
+              'January', 'February', 'March', 'April', 'May', 'June', 
+              'July', 'August', 'September', 'October', 'November', 'December'
+            ],
+            { $subtract: ['$_id.month', 1] }
+          ]
+        }
+      }}
+    ]);
+
+    // Create a map of existing monthly data
+    const monthMap = new Map(monthlyPurchases.map(m => [m.month, m]));
+
+    // Generate full year data with zero values for missing months
+    const currentYear = new Date().getFullYear();
+    const fullYearData = Array.from({length: 12}, (_, i) => {
+      const month = i + 1;
+      const existingData = monthMap.get(month);
+      
+      return existingData || {
+        month,
+        year: currentYear,
+        totalAmount: 0,
+        orderCount: 0,
+        monthName: [
+          'January', 'February', 'March', 'April', 'May', 'June', 
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ][i]
+      };
+    });
+
+    // Prepare the response
+    res.status(200).json({
+      message: 'Monthly Purchases retrieved successfully',
+      monthlyData: fullYearData
+    });
+  } catch (error) {
+    console.error('Error retrieving health facility monthly purchases:', error);
+    res.status(500).json({
+      message: error.message || 'Failed to retrieve monthly purchases',
+      errorDetails: error
+    });
+  }
+};
+
+export const getSupplierMonthlySales = async (req, res) => {
+  try {
+    // Aggregate monthly sales for Supplier
+    const monthlySales = await Order.aggregate([
+      // Match orders for the specific supplier
+      { $match: { supplierId: req.user._id } },
+      
+      // Extract month and year from createdAt
+      { $addFields: {
+        month: { $month: '$createdAt' },
+        year: { $year: '$createdAt' }
+      }},
+      
+      // Group by month and year, sum total sales
+      { $group: {
+        _id: { 
+          month: '$month', 
+          year: '$year' 
+        },
+        totalAmount: { $sum: '$totalPrice' },
+        orderCount: { $sum: 1 }
+      }},
+      
+      // Sort by year and month
+      { $sort: { 
+        '_id.year': 1, 
+        '_id.month': 1 
+      }},
+      
+      // Transform for frontend consumption
+      { $project: {
+        _id: 0,
+        month: '$_id.month',
+        year: '$_id.year',
+        totalAmount: 1,
+        orderCount: 1,
+        monthName: {
+          $arrayElemAt: [
+            [
+              'January', 'February', 'March', 'April', 'May', 'June', 
+              'July', 'August', 'September', 'October', 'November', 'December'
+            ],
+            { $subtract: ['$_id.month', 1] }
+          ]
+        }
+      }}
+    ]);
+
+    // Create a map of existing monthly data
+    const monthMap = new Map(monthlySales.map(m => [m.month, m]));
+
+    // Generate full year data with zero values for missing months
+    const currentYear = new Date().getFullYear();
+    const fullYearData = Array.from({length: 12}, (_, i) => {
+      const month = i + 1;
+      const existingData = monthMap.get(month);
+      
+      return existingData || {
+        month,
+        year: currentYear,
+        totalAmount: 0,
+        orderCount: 0,
+        monthName: [
+          'January', 'February', 'March', 'April', 'May', 'June', 
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ][i]
+      };
+    });
+
+    // Prepare the response
+    res.status(200).json({
+      message: 'Monthly Sales retrieved successfully',
+      monthlyData: fullYearData
+    });
+  } catch (error) {
+    console.error('Error retrieving supplier monthly sales:', error);
+    res.status(500).json({
+      message: error.message || 'Failed to retrieve monthly sales',
+      errorDetails: error
+    });
+  }
+};
