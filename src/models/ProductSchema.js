@@ -29,7 +29,7 @@ const ProductSchema = new mongoose.Schema({
   },
   manufacturer: {
     type: String,
-    required: true,
+    required: false,
     trim: true
   },
   dosageForm: {

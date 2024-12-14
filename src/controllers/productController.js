@@ -6,7 +6,7 @@ import asyncHandler from '../middleware/asyncHandler.js';
 // @access  Private (Supplier only)
 export const createProduct = asyncHandler(async (req, res) => {
   const { 
-    name, description, category, manufacturer, 
+    name, description, category, 
     dosageForm, strength, quantityAvailable, 
     unitPrice, expiryDate, batchNumber, storageConditions 
   } = req.body;
@@ -22,7 +22,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     name, 
     description, 
     category, 
-    manufacturer,
+    // manufacturer,
     dosageForm, 
     strength, 
     quantityAvailable, 
