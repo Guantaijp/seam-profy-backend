@@ -20,7 +20,16 @@ const invoiceSchema = new mongoose.Schema({
       ref: 'RFQ',
       required: true,
     },
-    supplierId: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },
+    healthFacilityId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User', 
+      required: true
+    },
+    supplierId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User', 
+      required: true
+    },
     negotiationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Negotiation' },
     deliveryDetails: { type: Object, required: true },
     totalPrice: { type: Number, required: true },

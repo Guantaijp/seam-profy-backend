@@ -137,6 +137,7 @@ export const createOrder = async (req, res) => {
       orderDetails: {
         orderNumber: newOrder.orderNumber,
         rfqId: newOrder.rfqId,
+        healthFacilityId: newOrder.healthFacilityId,
         supplierId: newOrder.supplierId,
         negotiationId: newOrder.negotiationId,
         deliveryDetails: newOrder.deliveryDetails,
@@ -212,16 +213,19 @@ export const createOrder = async (req, res) => {
 // Get orders for a health facility
 export const getHealthFacilityOrders = async (req, res) => {
   try {
-    
     const orders = await Order.find({ healthFacilityId: req.user._id })
     .populate('rfqId')
-    .populate('supplierId', 'accountType businessName location') // Populate User model
+    .populate('supplierId', 'accountType businessName location')
     .populate('negotiationId')
     .sort({ createdAt: -1 });
+
+    // Calculate total price for all orders
+    const totalOrderPrice = orders.reduce((sum, order) => sum + order.totalPrice, 0);
 
     res.status(200).json({
       message: 'Health facility orders retrieved successfully',
       count: orders.length,
+      totalOrderPrice: totalOrderPrice,
       orders: orders
     });
   } catch (error) {
@@ -238,14 +242,18 @@ export const getSupplierOrders = async (req, res) => {
   try {
     // Fetch orders where the supplierId matches the logged-in user's ID
     const orders = await Order.find({ supplierId: req.user._id })
-      .populate('rfqId') // Optional: populate RFQ details if needed
-      .populate('healthFacilityId') // Optional: populate health facility details
-      .populate('negotiationId') // Optional: populate negotiation details
-      .sort({ createdAt: -1 }); // Sort by most recent first
+      .populate('rfqId')
+      .populate('healthFacilityId')
+      .populate('negotiationId')
+      .sort({ createdAt: -1 });
+
+    // Calculate total price for all orders
+    const totalOrderPrice = orders.reduce((sum, order) => sum + order.totalPrice, 0);
 
     res.status(200).json({
       message: 'Supplier orders retrieved successfully',
       count: orders.length,
+      totalOrderPrice: totalOrderPrice,
       orders: orders
     });
   } catch (error) {
@@ -256,7 +264,6 @@ export const getSupplierOrders = async (req, res) => {
     });
   }
 };
-
 
 
 export const getHealthFacilityMonthlyPurchases = async (req, res) => {

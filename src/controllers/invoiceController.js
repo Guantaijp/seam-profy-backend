@@ -4,6 +4,7 @@ import Order from '../models/Order.js';
 import PDFDocument from 'pdfkit'; // You'll need to install pdfkit: npm install pdfkit
 import fs from 'fs';
 import path from 'path';
+import User from '../models/User.js';
 
 const getNextInvoiceNumber = async () => {
   try {
@@ -251,85 +252,78 @@ tableData.forEach((row, i) => {
 
 
 
-
-export const getInvoicesByHealthFacility = async (req, res) => {
+export const getHealthFacilityInvoices = async (req, res) => {
   try {
-    const invoices = await Invoice.find({ 
-      'billingDetails.healthFacilityName': req.user.businessName 
-    })
-    .populate('order')
-    .sort({ createdAt: -1 });
+    const healthFacilityId = req.user._id; // Assuming `req.user` has the authenticated user's details
+    console.log('healthFacilityId ID:', healthFacilityId);
 
+    // Ensure the user is a Healthcare Facility
+    const healthFacility = await User.findById(healthFacilityId);
+    if (!healthFacility || healthFacility.accountType !== 'Healthcare Facility') {
+      return res.status(404).json({ message: 'User is not a Healthcare Facilityy' });
+    }
+
+    // Fetch invoices for theHealthcare Facility
+    const invoices = await Invoice.find({ 'orderDetails.healthFacilityId': healthFacilityId })
+      // .populate('order')
+      // .populate('orderDetails.rfqId')
+      // .populate('orderDetails.negotiationId')
+      // .populate('orderDetails.healthFacilityId'); // Populate Healthcare Facility details if needed
+
+    // Return a 200 status even if no invoices are found
+    if (invoices.length === 0) {
+      return res.status(200).json({ message: 'No invoices found for this Healthcare Facility' });
+    }
+
+    // Successfully return invoices
     res.status(200).json({
-      message: 'Invoices retrieved successfully',
-      count: invoices.length,
-      invoices
+      message: 'Invoices fetched successfully',
+      invoices,
     });
   } catch (error) {
-    console.error('Error retrieving invoices:', error);
+    console.error('Error fetching Healthcare Facility invoices:', error);
     res.status(500).json({
-      message: 'Failed to retrieve invoices',
-      error: error.message
+      message: 'Failed to fetch Healthcare Facility invoices',
+      error: error.message,
     });
   }
 };
 
 
-export const getHealthFacilityInvoices = async (req, res) => {
-    try {
-      // Find invoices for orders specifically for this health facility
-      const invoices = await Invoice.find()
-        .populate({
-          path: 'order',
-          match: { healthFacilityId: req.user._id },
-          populate: [
-            { path: 'healthFacilityId' },
-            { path: 'supplierId' }
-          ]
-        })
-        .sort({ createdAt: -1 });
-  
-      // Filter out invoices without a matching order
-      const filteredInvoices = invoices.filter(invoice => invoice.order !== null);
-  
-      res.status(200).json({
-        message: 'Health facility invoices retrieved successfully',
-        count: filteredInvoices.length,
-        invoices: filteredInvoices
-      });
-    } catch (error) {
-      console.error('Error retrieving health facility invoices:', error);
-      res.status(500).json({
-        message: 'Failed to retrieve invoices',
-        error: error.message
-      });
-    }
-  };
 
-  export const getSupplierInvoices = async (req, res) => {
-    try {
-      // Find invoices for orders where the supplier is the current user
-      const invoices = await Invoice.find()
-        .populate({
-          path: 'order',
-          match: { supplierId: req.user._id }
-        })
-        .populate('order')
-        .sort({ createdAt: -1 });
-  
-      // Filter out any invoices where the order population didn't match
-      const filteredInvoices = invoices.filter(invoice => invoice.order);
-  
-      res.status(200).json({
-        message: 'Supplier invoices retrieved successfully',
-        count: filteredInvoices.length,
-        invoices: filteredInvoices
-      });
-    } catch (error) {
-      console.error('Error retrieving supplier invoices:', error);
-      res.status(500).json({
-        message: 'Failed to retrieve invoices',
-        error: error.message
-      });
+export const getSupplierInvoices = async (req, res) => {
+  try {
+    const supplierId = req.user._id; // Assuming `req.user` has the authenticated user's details
+    console.log('Supplier ID:', supplierId);
+
+    // Ensure the user is a Supplier
+    const supplier = await User.findById(supplierId);
+    if (!supplier || supplier.accountType !== 'Supplier') {
+      return res.status(404).json({ message: 'User is not a supplier' });
     }
-  };
+
+    // Fetch invoices for the supplier
+    const invoices = await Invoice.find({ 'orderDetails.supplierId': supplierId })
+      .populate('order')
+      .populate('orderDetails.rfqId')
+      .populate('orderDetails.negotiationId')
+      .populate('orderDetails.supplierId'); // Populate supplier details if needed
+
+    // Return a 200 status even if no invoices are found
+    if (invoices.length === 0) {
+      return res.status(200).json({ message: 'No invoices found for this supplier' });
+    }
+
+    // Successfully return invoices
+    res.status(200).json({
+      message: 'Invoices fetched successfully',
+      invoices,
+    });
+  } catch (error) {
+    console.error('Error fetching supplier invoices:', error);
+    res.status(500).json({
+      message: 'Failed to fetch supplier invoices',
+      error: error.message,
+    });
+  }
+};
