@@ -191,3 +191,116 @@ export const getExpiringProducts = asyncHandler(async (req, res) => {
     expiringProducts
   });
 });
+
+
+// ADMIN
+
+export const adminGetAllProducts = asyncHandler(async (req, res) => {
+  const products = await Product.find({}).populate('supplier', 'businessName');
+  res.json({
+    message: 'All products retrieved successfully',
+    products,
+  });
+});
+
+// @desc    Admin: Create a new product
+// @route   POST /api/admin/products
+// @access  Private (Admin only)
+export const adminCreateProduct = asyncHandler(async (req, res) => {
+  const { 
+    supplierId, name, description, category, 
+    dosageForm, strength, quantityAvailable, 
+    unitPrice, expiryDate, batchNumber, storageConditions 
+  } = req.body;
+
+  const product = new Product({
+    supplier: supplierId, // Admin provides the supplier ID
+    name, 
+    description, 
+    category, 
+    dosageForm, 
+    strength, 
+    quantityAvailable, 
+    unitPrice, 
+    expiryDate,
+    batchNumber,
+    storageConditions,
+  });
+
+  const createdProduct = await product.save();
+  res.status(201).json({
+    message: 'Product created successfully by Admin',
+    product: createdProduct,
+  });
+});
+
+// @desc    Admin: Update any product
+// @route   PUT /api/admin/products/:id
+// @access  Private (Admin only)
+export const adminUpdateProduct = asyncHandler(async (req, res) => {
+  const product = await Product.findById(req.params.id);
+
+  if (!product) {
+    res.status(404);
+    throw new Error('Product not found');
+  }
+
+  // Update fields
+  product.name = req.body.name || product.name;
+  product.description = req.body.description || product.description;
+  product.category = req.body.category || product.category;
+  product.dosageForm = req.body.dosageForm || product.dosageForm;
+  product.strength = req.body.strength || product.strength;
+  product.quantityAvailable = req.body.quantityAvailable || product.quantityAvailable;
+  product.unitPrice = req.body.unitPrice || product.unitPrice;
+  product.expiryDate = req.body.expiryDate || product.expiryDate;
+  product.batchNumber = req.body.batchNumber || product.batchNumber;
+  product.storageConditions = req.body.storageConditions || product.storageConditions;
+
+  const updatedProduct = await product.save();
+  res.json({
+    message: 'Product updated successfully by Admin',
+    product: updatedProduct,
+  });
+});
+
+// @desc    Admin: Delete any product
+// @route   DELETE /api/admin/products/:id
+// @access  Private (Admin only)
+export const adminDeleteProduct = asyncHandler(async (req, res) => {
+  const product = await Product.findById(req.params.id);
+
+  if (!product) {
+    res.status(404);
+    throw new Error('Product not found');
+  }
+
+  await product.deleteOne();
+  res.json({
+    message: 'Product deleted successfully by Admin',
+  });
+});
+
+
+// @desc    Admin: Get products nearing expiry
+// @route   GET /api/admin/products/expiring-soon
+// @access  Private (Admin only)
+export const adminGetExpiringProducts = asyncHandler(async (req, res) => {
+  const daysThreshold = req.query.days || 30; // Default threshold is 30 days
+  const currentDate = new Date();
+  const expiryThreshold = new Date(currentDate.getTime() + daysThreshold * 24 * 60 * 60 * 1000);
+
+  const expiringProducts = await Product.find({
+    expiryDate: { 
+      $gte: currentDate, 
+      $lte: expiryThreshold 
+    },
+  })
+    .populate('supplier', 'businessName') // Fetch supplier details
+    .sort({ expiryDate: 1 }); // Sort by earliest expiry
+
+  res.json({
+    message: 'Expiring products retrieved successfully for Admin',
+    expiringProducts,
+  });
+});

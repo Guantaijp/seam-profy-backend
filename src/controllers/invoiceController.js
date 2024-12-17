@@ -327,3 +327,131 @@ export const getSupplierInvoices = async (req, res) => {
     });
   }
 };
+
+
+
+// Admin: Fetch All Invoices
+export const getAllInvoices = async (req, res) => {
+  try {
+    // Ensure the user is an admin
+    const user = await User.findById(req.user._id);
+    if (!user || user.accountType !== 'Admin') {
+      return res.status(403).json({ message: 'Unauthorized: Only admins can access this' });
+    }
+
+    // Fetch all invoices
+    const invoices = await Invoice.find()
+      .populate('order')
+      .populate('orderDetails.rfqId')
+      .populate('orderDetails.negotiationId')
+      .populate('orderDetails.supplierId')
+      .populate('orderDetails.healthFacilityId'); // Populate details as necessary
+
+    // Return invoices or a message if no invoices exist
+    if (invoices.length === 0) {
+      return res.status(200).json({ message: 'No invoices found' });
+    }
+
+    res.status(200).json({
+      message: 'Invoices fetched successfully',
+      invoices,
+    });
+  } catch (error) {
+    console.error('Error fetching invoices:', error);
+    res.status(500).json({
+      message: 'Failed to fetch invoices',
+      error: error.message,
+    });
+  }
+};
+
+// Admin: Download Invoice
+export const adminDownloadInvoice = async (req, res) => {
+  try {
+    const { invoiceId } = req.params;
+    const invoice = await Invoice.findById(invoiceId)
+      .populate({
+        path: 'order',
+        populate: [
+          { path: 'healthFacilityId' },
+          { path: 'supplierId' },
+          { path: 'rfqId' },
+          { path: 'negotiationId' },
+        ],
+      });
+
+    if (!invoice) {
+      return res.status(404).json({ message: 'Invoice not found' });
+    }
+
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    const invoiceFileName = `${invoice.invoiceNumber}.pdf`;
+    const invoicePath = path.join(process.cwd(), 'invoices', invoiceFileName);
+
+    // Ensure invoices directory exists
+    if (!fs.existsSync(path.join(process.cwd(), 'invoices'))) {
+      fs.mkdirSync(path.join(process.cwd(), 'invoices'));
+    }
+
+    const writeStream = fs.createWriteStream(invoicePath);
+    doc.pipe(writeStream);
+
+    // Add content to PDF as per your invoice layout
+    // (you can keep the same code here as in the previous `downloadInvoice` function)
+    // Adding details like invoice number, supplier details, and items
+
+    doc.end();
+
+    writeStream.on('finish', () => {
+      res.download(invoicePath, invoiceFileName, (err) => {
+        if (err) {
+          console.error('Download error:', err);
+          res.status(500).json({ message: 'Download failed' });
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Error downloading invoice:', error);
+    res.status(500).json({
+      message: 'Failed to download invoice',
+      error: error.message,
+    });
+  }
+};
+
+// Admin: Delete Invoice
+export const deleteInvoice = async (req, res) => {
+  try {
+    const { invoiceId } = req.params;
+
+    // Ensure the user is an admin
+    const user = await User.findById(req.user._id);
+    if (!user || user.accountType !== 'Admin') {
+      return res.status(403).json({ message: 'Unauthorized: Only admins can delete invoices' });
+    }
+
+    // Find and delete the invoice
+    const invoice = await Invoice.findByIdAndDelete(invoiceId);
+
+    if (!invoice) {
+      return res.status(404).json({ message: 'Invoice not found' });
+    }
+
+    // Optionally, you could delete the associated PDF if needed
+    const invoicePath = path.join(process.cwd(), 'invoices', `${invoice.invoiceNumber}.pdf`);
+    if (fs.existsSync(invoicePath)) {
+      fs.unlinkSync(invoicePath);
+    }
+
+    res.status(200).json({
+      message: 'Invoice deleted successfully',
+    });
+  } catch (error) {
+    console.error('Error deleting invoice:', error);
+    res.status(500).json({
+      message: 'Failed to delete invoice',
+      error: error.message,
+    });
+  }
+};
+

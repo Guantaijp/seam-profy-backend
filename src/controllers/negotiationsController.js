@@ -262,3 +262,139 @@ export const getHealthFacilityNegotiations = async (req, res) => {
     });
   }
 };
+
+
+// @desc    Get All Negotiations
+// @route   GET /api/admin/negotiations
+export const getAllNegotiationsForAdmin = async (req, res) => {
+  try {
+    if (!req.user || req.user.accountType !== 'Admin') {
+      return res.status(403).json({
+        message: 'Access denied. Only admins can access this route.',
+      });
+    }
+
+    const negotiations = await Negotiation.find()
+      .populate({
+        path: 'rfqId',
+        select: 'title description status createdAt',
+      })
+      .populate({
+        path: 'supplierId',
+        select: 'businessName email contact',
+      })
+      .populate({
+        path: 'healthFacilityId',
+        select: 'name email contact',
+      });
+
+    res.json({
+      count: negotiations.length,
+      negotiations,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message || 'Failed to retrieve all negotiations.',
+    });
+  }
+};
+
+// @desc    Get Single Negotiation by ID
+// @route   GET /api/admin/negotiations/:id
+export const getNegotiationByIdForAdmin = async (req, res) => {
+  try {
+    if (!req.user || req.user.accountType !== 'Admin') {
+      return res.status(403).json({
+        message: 'Access denied. Only admins can access this route.',
+      });
+    }
+
+    const negotiation = await Negotiation.findById(req.params.id)
+      .populate({
+        path: 'rfqId',
+        select: 'title description status createdAt',
+      })
+      .populate({
+        path: 'supplierId',
+        select: 'businessName email contact',
+      })
+      .populate({
+        path: 'healthFacilityId',
+        select: 'name email contact',
+      });
+
+    if (!negotiation) {
+      return res.status(404).json({ message: 'Negotiation not found.' });
+    }
+
+    res.json(negotiation);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message || 'Failed to retrieve negotiation.',
+    });
+  }
+};
+
+// @desc    Update Negotiation
+// @route   PATCH /api/admin/negotiations/:id
+export const updateNegotiationForAdmin = async (req, res) => {
+  try {
+    if (!req.user || req.user.accountType !== 'Admin') {
+      return res.status(403).json({
+        message: 'Access denied. Only admins can access this route.',
+      });
+    }
+
+    const { status, negotiationStatus, additionalNotes } = req.body;
+
+    const negotiation = await Negotiation.findById(req.params.id);
+
+    if (!negotiation) {
+      return res.status(404).json({ message: 'Negotiation not found.' });
+    }
+
+    // Update fields if provided
+    if (status) negotiation.status = status;
+    if (negotiationStatus) negotiation.negotiationStatus = negotiationStatus;
+    if (additionalNotes) negotiation.additionalNotes = additionalNotes;
+
+    const updatedNegotiation = await negotiation.save();
+
+    res.json({
+      message: 'Negotiation updated successfully.',
+      negotiation: updatedNegotiation,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message || 'Failed to update negotiation.',
+    });
+  }
+};
+
+// @desc    Delete Negotiation
+// @route   DELETE /api/admin/negotiations/:id
+export const deleteNegotiationForAdmin = async (req, res) => {
+  try {
+    if (!req.user || req.user.accountType !== 'Admin') {
+      return res.status(403).json({
+        message: 'Access denied. Only admins can access this route.',
+      });
+    }
+
+    const negotiation = await Negotiation.findById(req.params.id);
+
+    if (!negotiation) {
+      return res.status(404).json({ message: 'Negotiation not found.' });
+    }
+
+    await negotiation.deleteOne();
+
+    res.json({
+      message: 'Negotiation deleted successfully.',
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message || 'Failed to delete negotiation.',
+    });
+  }
+};
