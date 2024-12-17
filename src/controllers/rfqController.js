@@ -478,3 +478,91 @@ export const getSupplierRequests = async (req, res) => {
     });
   }
 };
+
+
+
+// @desc    Admin: Get all RFQs
+// @route   GET /api/admin/rfq
+export const adminGetAllRFQs = async (req, res) => {
+  try {
+    // Fetch all RFQs sorted by creation date
+    const rfqs = await RFQ.find().sort({ createdAt: -1 });
+
+    // Get the total count of RFQs
+    const rfqCount = await RFQ.countDocuments();
+
+    res.json({
+      rfqs,
+      rfqCount,  // Include the count in the response
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message || 'Failed to retrieve RFQs for admin.',
+    });
+  }
+};
+
+// @desc    Admin: Update any RFQ
+// @route   PUT /api/admin/rfq/:id
+export const adminUpdateRFQ = async (req, res) => {
+  try {
+    const { title, items, summary, expiryDate } = req.body;
+    const rfq = await RFQ.findById(req.params.id);
+
+    if (!rfq) {
+      return res.status(404).json({ message: 'RFQ not found' });
+    }
+
+    rfq.title = title || rfq.title;
+    rfq.summary = summary || rfq.summary;
+    rfq.items = items || rfq.items;
+    rfq.expiryDate = expiryDate || rfq.expiryDate;
+
+    await rfq.save();
+    res.json({ message: 'RFQ updated successfully', rfq });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message || 'Failed to update RFQ',
+    });
+  }
+};
+
+// @desc    Admin: Publish any RFQ
+// @route   PATCH /api/admin/rfq/:id/publish
+export const adminPublishRFQ = async (req, res) => {
+  try {
+    const rfq = await RFQ.findById(req.params.id);
+
+    if (!rfq) {
+      return res.status(404).json({ message: 'RFQ not found' });
+    }
+
+    rfq.status = 'Published';
+    rfq.publishedAt = new Date();
+
+    await rfq.save();
+    res.json({ message: 'RFQ published successfully', rfq });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message || 'Failed to publish RFQ',
+    });
+  }
+};
+
+// @desc    Admin: Delete any RFQ
+// @route   DELETE /api/admin/rfq/:id
+export const adminDeleteRFQ = async (req, res) => {
+  try {
+    const rfq = await RFQ.findByIdAndDelete(req.params.id);
+
+    if (!rfq) {
+      return res.status(404).json({ message: 'RFQ not found' });
+    }
+
+    res.json({ message: 'RFQ deleted successfully', deletedRFQ: rfq });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message || 'Failed to delete RFQ',
+    });
+  }
+};

@@ -9,7 +9,15 @@ import {
   getUserProfile,
   updateUserProfile
 } from '../controllers/authController.js';
+import {
+  getAllUsers,
+  getUserById,
+  createUserByAdmin,
+  updateUserByAdmin,
+  deleteUserByAdmin
+} from '../controllers/adminController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
+import { adminOnly } from '../middleware/adminMiddleware.js';
 
 const router = express.Router();
 
@@ -52,4 +60,14 @@ router.put('/profile',
   uploadUpdateFiles, 
   updateUserProfile
 );
+
+
+
+// Admin-only routes for user management
+router.get('/admin/users', authMiddleware, adminOnly, getAllUsers);
+router.get('/admin/users/:id', authMiddleware, adminOnly, getUserById);
+router.post('/admin/users', authMiddleware, adminOnly, uploadCertificates, createUserByAdmin);
+router.put('/admin/users/:id', authMiddleware, adminOnly, uploadUpdateFiles, updateUserByAdmin);
+router.delete('/admin/users/:id', authMiddleware, adminOnly, deleteUserByAdmin);
+
 export default router;

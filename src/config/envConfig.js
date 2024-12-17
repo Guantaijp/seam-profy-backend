@@ -8,7 +8,7 @@ export default {
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '30d',
   EMAIL_PORT: process.env.EMAIL_PORT,
   EMAIL_USER: process.env.EMAIL_USER,
-  FRONTEND_URL: 'http://localhost:5000',
+  FRONTEND_URL: 'https://www.seamprofy.com',
   EMAIL_PASS: process.env.EMAIL_PASS,
   CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,

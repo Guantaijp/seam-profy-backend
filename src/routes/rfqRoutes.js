@@ -9,11 +9,15 @@ import {
   removeAttachment,
   getPublishedRFQs,
   getHealthFacilityRequests,
-  getSupplierRequests
+  getSupplierRequests,
+  adminGetAllRFQs,
+  adminUpdateRFQ,
+  adminPublishRFQ,
+  adminDeleteRFQ
 } from '../controllers/rfqController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import multer from 'multer';
-
+import { adminOnly } from '../middleware/adminMiddleware.js';
 // Configure multer for file uploads
 const upload = multer({
   dest: 'uploads/',
@@ -53,5 +57,12 @@ router.patch('/:id/publish', authMiddleware, publishRFQ);
 // Remove attachment route
 router.delete('/:id/attachments/:attachmentId', authMiddleware, removeAttachment);
 
+
+
+// Admin RFQ Routes
+router.get('/admin/rfq', authMiddleware, adminOnly, adminGetAllRFQs); // Get all RFQs
+router.put('/admin/rfq/:id', authMiddleware, adminOnly, adminUpdateRFQ); // Update RFQ
+router.patch('/admin/rfq/:id/publish', authMiddleware, adminOnly, adminPublishRFQ); // Publish RFQ
+router.delete('/admin/rfq/:id', authMiddleware, adminOnly, adminDeleteRFQ); // Delete RFQ
 
 export default router;

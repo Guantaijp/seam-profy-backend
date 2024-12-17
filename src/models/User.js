@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 const UserSchema = new mongoose.Schema({
   accountType: {
     type: String,
-    enum: ['Healthcare Facility', 'Supplier'],
+    enum: ['Healthcare Facility', 'Supplier', 'Admin'], // Add 'Admin' role
     required: true
   },
   businessName: {
