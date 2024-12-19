@@ -36,10 +36,10 @@ router.route('/:id')
 
 
   // Admin Product Management Routes
-router.get('/products', authMiddleware, adminOnly, adminGetAllProducts);       // Get all products
-router.post('/products', authMiddleware, adminOnly, adminCreateProduct);       // Create a product
-router.put('/products/:id', authMiddleware, adminOnly, adminUpdateProduct);    // Update a product
-router.delete('/products/:id', authMiddleware, adminOnly, adminDeleteProduct); // Delete a product
+router.get('/admin/products', authMiddleware, adminOnly, adminGetAllProducts);       // Get all products
+router.post('/admin/products', authMiddleware, adminOnly, adminCreateProduct);       // Create a product
+router.put('/admin/products/:id', authMiddleware, adminOnly, adminUpdateProduct);    // Update a product
+router.delete('/admin/products/:id', authMiddleware, adminOnly, adminDeleteProduct); // Delete a product
 
 
 export default router;

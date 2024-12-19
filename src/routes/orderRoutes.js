@@ -28,13 +28,13 @@ router.get('/supplier/monthly-sales', authMiddleware, getSupplierMonthlySales);
 
 
 // Admin Routes for Orders Management
-router.post('/orders', authMiddleware, adminOnly, adminCreateOrder);        // Create Order
-router.get('/orders', authMiddleware, adminOnly, getAllOrders);            // Get All Orders
-router.put('/orders/:id', authMiddleware, adminOnly, updateOrder);         // Update Order
-router.delete('/orders/:id', authMiddleware, adminOnly, deleteOrder);      // Delete Order
+router.post('/admin/orders', authMiddleware, adminOnly, adminCreateOrder);        // Create Order
+router.get('/admin/orders', authMiddleware, adminOnly, getAllOrders);            // Get All Orders
+router.put('/admin/orders/:id', authMiddleware, adminOnly, updateOrder);         // Update Order
+router.delete('/admin/orders/:id', authMiddleware, adminOnly, deleteOrder);      // Delete Order
 
 // Admin Routes for Reports
-router.get('/sales', authMiddleware, adminOnly, getAllSales);              // Get Total Sales
-router.get('/purchases', authMiddleware, adminOnly, getAllPurchases); 
+router.get('/admin/sales', authMiddleware, adminOnly, getAllSales);              // Get Total Sales
+router.get('/admin/purchases', authMiddleware, adminOnly, getAllPurchases); 
 
 export default router;
