@@ -36,6 +36,7 @@ app.use(morgan('dev')); // Logs HTTP requests in 'dev' format
 const allowedOrigins = [
   'http://localhost:5173',
   'https://www.seamprofy.com',
+  'https://adminseamprofy-jldd.vercel.app',
   'https://pharma-procurement.vercel.app'
 ];
 
