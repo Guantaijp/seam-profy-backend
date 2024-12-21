@@ -37,6 +37,7 @@ const allowedOrigins = [
   'http://localhost:5173',
   'https://www.seamprofy.com',
   'https://adminseamprofy-jldd.vercel.app',
+  'https://adminseamprofy.vercel.app',
   'https://pharma-procurement.vercel.app'
 ];
 
