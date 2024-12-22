@@ -352,37 +352,40 @@ export const getPublishedRFQs = async (req, res) => {
   }
 };
 
-// @desc    Get RFQs with status filtering for Healthcare Facility
-// @route   GET /api/rfq/facility-requests
 export const getHealthFacilityRequests = async (req, res) => {
   try {
     const { status } = req.query;
     const currentDate = new Date();
 
-    let query = { 
-      createdBy: req.user._id 
+    let query = {
+      createdBy: req.user._id
+    };
+
+    // Base queries for different states
+    const pendingQuery = {
+      ...query,
+      status: 'Published',
+      $or: [
+        { expiryDate: { $gt: currentDate } },
+        { expiryDate: null }
+      ]
+    };
+
+    const closedQuery = {
+      ...query,
+      $or: [
+        { status: 'Awarded' },
+        { expiryDate: { $lt: currentDate } }
+      ]
     };
 
     // Filter RFQs based on status for Healthcare Facility
     switch (status) {
       case 'Pending':
-        query = {
-          ...query,
-          status: 'Published',
-          $or: [
-            { expiryDate: { $gt: currentDate } },
-            { expiryDate: null }
-          ]
-        };
+        query = pendingQuery;
         break;
       case 'Closed':
-        query = {
-          ...query,
-          $or: [
-            { status: 'Awarded' },
-            { expiryDate: { $lt: currentDate } }
-          ]
-        };
+        query = closedQuery;
         break;
       default:
         // If no status specified, return all RFQs
@@ -403,50 +406,73 @@ export const getHealthFacilityRequests = async (req, res) => {
       RFQ.countDocuments(query)
     ]);
 
+    // Map through RFQs to add computed status based on expiry date and award status
+    const rfqsWithComputedStatus = rfqs.map(rfq => {
+      const rfqObject = rfq.toObject();
+      if (rfq.status === 'Awarded') {
+        rfqObject.status = 'Closed';
+      } else if (rfq.expiryDate && rfq.expiryDate < currentDate) {
+        rfqObject.status = 'Closed';
+      } else {
+        rfqObject.status = 'Pending';
+      }
+      return rfqObject;
+    });
+
     res.json({
-      rfqs,
+      rfqs: rfqsWithComputedStatus,
       total,
       page,
       limit,
       status: status || 'All'
     });
   } catch (error) {
-    res.status(400).json({ 
-      message: error.message || 'Failed to retrieve RFQs' 
+    res.status(400).json({
+      message: error.message || 'Failed to retrieve RFQs'
     });
   }
 };
-
-// @desc    Get RFQs with status filtering for Suppliers
-// @route   GET /api/rfq/supplier-requests
 export const getSupplierRequests = async (req, res) => {
   try {
     const { status } = req.query;
     const currentDate = new Date();
 
-    let query = { 
-      status: 'Published' 
+    let query = {
+      status: 'Published'
+    };
+
+    // Base query for handling expired RFQs
+    const activeQuery = {
+      ...query,
+      $or: [
+        { expiryDate: { $gt: currentDate } },
+        { expiryDate: null }
+      ]
+    };
+
+    const closedQuery = {
+      ...query,
+      expiryDate: { $lt: currentDate }
     };
 
     // Filter RFQs based on status for Suppliers
     switch (status) {
       case 'Active':
+        query = activeQuery;
+        break;
+      case 'Closed':
+        query = closedQuery;
+        break;
+      default:
+        // If no status specified, combine both active and closed RFQs
         query = {
           ...query,
           $or: [
             { expiryDate: { $gt: currentDate } },
+            { expiryDate: { $lt: currentDate } },
             { expiryDate: null }
           ]
         };
-        break;
-      case 'Closed':
-        query = {
-          ...query,
-          expiryDate: { $lt: currentDate }
-        };
-        break;
-      default:
-        // If no status specified, return all published RFQs
         break;
     }
 
@@ -465,16 +491,23 @@ export const getSupplierRequests = async (req, res) => {
       RFQ.countDocuments(query)
     ]);
 
+    // Map through RFQs to add computed status based on expiry date
+    const rfqsWithComputedStatus = rfqs.map(rfq => {
+      const rfqObject = rfq.toObject();
+      rfqObject.status = rfq.expiryDate && rfq.expiryDate < currentDate ? 'Closed' : 'Active';
+      return rfqObject;
+    });
+
     res.json({
-      rfqs,
+      rfqs: rfqsWithComputedStatus,
       total,
       page,
       limit,
       status: status || 'All'
     });
   } catch (error) {
-    res.status(400).json({ 
-      message: error.message || 'Failed to retrieve RFQs' 
+    res.status(400).json({
+      message: error.message || 'Failed to retrieve RFQs'
     });
   }
 };
