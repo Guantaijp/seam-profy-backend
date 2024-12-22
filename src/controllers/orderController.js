@@ -528,10 +528,11 @@ export const deleteOrder = async (req, res) => {
   }
 };
 
-// Get all Sales (Total sales across health facilities)
+
 export const getAllSales = async (req, res) => {
   try {
-    const sales = await Order.aggregate([
+    // Get overall totals
+    const totalSales = await Order.aggregate([
       {
         $group: {
           _id: null,
@@ -541,14 +542,92 @@ export const getAllSales = async (req, res) => {
       },
     ]);
 
+    // Get monthly breakdown
+    const monthlySales = await Order.aggregate([
+      // Extract month and year from createdAt
+      {
+        $addFields: {
+          month: { $month: '$createdAt' },
+          year: { $year: '$createdAt' }
+        }
+      },
+
+      // Group by month and year, sum total sales
+      {
+        $group: {
+          _id: {
+            month: '$month',
+            year: '$year'
+          },
+          totalAmount: { $sum: '$totalPrice' },
+          orderCount: { $sum: 1 }
+        }
+      },
+
+      // Sort by year and month
+      {
+        $sort: {
+          '_id.year': 1,
+          '_id.month': 1
+        }
+      },
+
+      // Transform for frontend consumption
+      {
+        $project: {
+          _id: 0,
+          month: '$_id.month',
+          year: '$_id.year',
+          totalAmount: 1,
+          orderCount: 1,
+          monthName: {
+            $arrayElemAt: [
+              [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+              ],
+              { $subtract: ['$_id.month', 1] }
+            ]
+          }
+        }
+      }
+    ]);
+
+    // Create a map of existing monthly data
+    const monthMap = new Map(monthlySales.map(m => [m.month, m]));
+
+    // Generate full year data with zero values for missing months
+    const currentYear = new Date().getFullYear();
+    const fullYearData = Array.from({length: 12}, (_, i) => {
+      const month = i + 1;
+      const existingData = monthMap.get(month);
+
+      return existingData || {
+        month,
+        year: currentYear,
+        totalAmount: 0,
+        orderCount: 0,
+        monthName: [
+          'January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ][i]
+      };
+    });
+
     res.status(200).json({
-      message: 'Total sales retrieved successfully',
-      totalSales: sales[0]?.totalSales || 0,
-      totalOrders: sales[0]?.totalOrders || 0,
+      message: 'Sales data retrieved successfully',
+      overview: {
+        totalSales: totalSales[0]?.totalSales || 0,
+        totalOrders: totalSales[0]?.totalOrders || 0,
+      },
+      monthlyData: fullYearData
     });
   } catch (error) {
-    console.error('Error fetching total sales:', error);
-    res.status(500).json({ message: 'Failed to retrieve sales', errorDetails: error });
+    console.error('Error fetching sales data:', error);
+    res.status(500).json({ 
+      message: 'Failed to retrieve sales data', 
+      errorDetails: error 
+    });
   }
 };
 
