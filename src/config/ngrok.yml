@@ -1,0 +1,4 @@
+version: "2"
+authtoken: your_ngrok_auth_token
+region: us
+console_ui: true
