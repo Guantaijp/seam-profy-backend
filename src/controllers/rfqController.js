@@ -397,40 +397,28 @@ export const getHealthFacilityRequests = async (req, res) => {
     const limit = parseInt(req.query.limit, 10) || 10;
     const skip = (page - 1) * limit;
 
-    // Fetch RFQs with pagination and count
-    const [rfqs, total] = await Promise.all([
-      RFQ.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
-      RFQ.countDocuments(query)
-    ]);
-
-    // Map through RFQs to add computed status based on expiry date and award status
-    const rfqsWithComputedStatus = rfqs.map(rfq => {
-      const rfqObject = rfq.toObject();
-      if (rfq.status === 'Awarded') {
-        rfqObject.status = 'Closed';
-      } else if (rfq.expiryDate && rfq.expiryDate < currentDate) {
-        rfqObject.status = 'Closed';
-      } else {
-        rfqObject.status = 'Pending';
-      }
-      return rfqObject;
-    });
-
-    res.json({
-      rfqs: rfqsWithComputedStatus,
-      total,
-      page,
-      limit,
-      status: status || 'All'
-    });
-  } catch (error) {
-    res.status(400).json({
-      message: error.message || 'Failed to retrieve RFQs'
-    });
-  }
+  // Fetch RFQs and total count
+  const [rfqs, total] = await Promise.all([
+    RFQ.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    RFQ.countDocuments(query)
+  ]);
+  
+  res.json({
+    rfqs,
+    total,
+    page,
+    limit,
+    status: status || 'All'
+  });
+  
+} catch (error) {
+  res.status(400).json({
+    message: error.message || 'Failed to retrieve RFQs'
+  });
+}
 };
 export const getSupplierRequests = async (req, res) => {
   try {
