@@ -41,6 +41,10 @@ const UserSchema = new mongoose.Schema({
     type: String, // Cloudinary URL
     required: true
   },
+  pharmacyLicense: {
+    type: String, // Cloudinary URL
+    required: true
+  },
   companyLogo: {
     type: String, // Cloudinary URL
     required: false

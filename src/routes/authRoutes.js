@@ -40,12 +40,14 @@ const upload = multer({
 // Configure file upload middleware
 const uploadCertificates = upload.fields([
   { name: 'registrationCertificate', maxCount: 1 },
-  { name: 'taxIdCertificate', maxCount: 1 }
+  { name: 'taxIdCertificate', maxCount: 1 },
+  { name: 'pharmacyLicense', maxCount: 1 }
 ]);
 
 const uploadUpdateFiles = upload.fields([   
   { name: 'registrationCertificate', maxCount: 1 },   
   { name: 'taxIdCertificate', maxCount: 1 },
+  { name: 'pharmacyLicense', maxCount: 1 },
   { name: 'companyLogo', maxCount: 1 }
 ]);
 

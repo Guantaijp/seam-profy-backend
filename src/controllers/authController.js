@@ -71,6 +71,11 @@ export const registerUser = async (req, res) => {
       'tax-id-certificates'
     );
 
+    const pharmacyLicenseUrl = await uploadToCloudinary(
+      req.files.pharmacyLicense[0].path,
+      'pharmacy-License'
+    );
+
     // Generate email verification token
     const emailVerificationToken = crypto.randomBytes(32).toString('hex');
     const emailVerificationTokenExpires = Date.now() + 3600000; // 1 hour
@@ -85,6 +90,7 @@ export const registerUser = async (req, res) => {
       password,
       registrationCertificate: registrationCertificateUrl,
       taxIdCertificate: taxIdCertificateUrl,
+      pharmacyLicense: pharmacyLicenseUrl,
       emailVerificationToken,
       emailVerificationTokenExpires,
       // isVerified: true,
@@ -393,6 +399,10 @@ export const updateUserProfile = async (req, res) => {
         folder: 'tax-id-certificates' 
       },
       { 
+        field: 'pharmacyLicense', 
+        folder: 'pharmacy-License' 
+      },
+      { 
         field: 'companyLogo', 
         folder: 'company-logos' 
       }
@@ -443,6 +453,7 @@ export const updateUserProfile = async (req, res) => {
       companyLogo: user.companyLogo,
       registrationCertificate: user.registrationCertificate,
       taxIdCertificate: user.taxIdCertificate,
+      pharmacyLicense:user.pharmacyLicense,
       isVerified: user.isVerified
     });
   } catch (error) {
