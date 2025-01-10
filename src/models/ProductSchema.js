@@ -27,11 +27,6 @@ const ProductSchema = new mongoose.Schema({
     ],
     required: true
   },
-  manufacturer: {
-    type: String,
-    required: false,
-    trim: true
-  },
   dosageForm: {
     type: String,
     enum: [

@@ -4,7 +4,7 @@ export const validateProduct = asyncHandler(async (req, res, next) => {
   const { 
     name, 
     category, 
-    manufacturer, 
+    // manufacturer, 
     quantityAvailable, 
     unitPrice, 
     expiryDate 
@@ -20,9 +20,9 @@ export const validateProduct = asyncHandler(async (req, res, next) => {
     errors.push('Product category is required');
   }
 
-  if (!manufacturer) {
-    errors.push('Manufacturer is required');
-  }
+  // if (!manufacturer) {
+  //   errors.push('Manufacturer is required');
+  // }
 
   if (typeof quantityAvailable !== 'number' || quantityAvailable < 0) {
     errors.push('Quantity must be a non-negative number');
