@@ -96,7 +96,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/invoices', invoicesRoutes);
 app.use('/api/mpesa', mpesaRoutes);
-app.use('/api/rating', ratingRoutes);
+app.use('/api/ratings', ratingRoutes);
 // Handle file upload errors
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
