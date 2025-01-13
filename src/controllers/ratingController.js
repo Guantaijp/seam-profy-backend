@@ -5,90 +5,95 @@ import User from '../models/User.js'; // Assuming you already have the User mode
 
 
 export const submitRating = async (req, res) => {
-    try {
-      const { supplierId, 
-        // orderId,
-         ratings, 
-         overallRating, 
-         comment } = req.body;
-      const facilityId = req.user._id;
-  
-      // Verify the user is a Healthcare Facility
-      const facility = await User.findById(facilityId);
-      if (!facility || facility.accountType !== 'Healthcare Facility') {
-        return res.status(403).json({
-          success: false,
-          message: 'Only healthcare facilities can submit ratings'
-        });
-      }
-  
-      // Verify the order exists and belongs to this facility
-    //   const order = await Order.findOne({
-    //     _id: orderId,
-    //     facilityId,
-    //     status: 'DELIVERED', // Only allow rating completed orders
-    //     ratingSubmitted: { $ne: true } // Ensure order hasn't been rated
-    //   });
-  
-    //   if (!order) {
-    //     return res.status(404).json({
-    //       success: false,
-    //       message: 'Order not found or not eligible for rating'
-    //     });
-    //   }
-  
-      // Create the rating
-      const rating = await Rating.create({
-        supplierId,
-        facilityId,
-        // orderId,
-        ratings,
-        overallRating,
-        comment
-      });
-  
-      // Mark order as rated
-    //   await Order.findByIdAndUpdate(orderId, {
-    //     ratingSubmitted: true
-    //   });
-  
-      // Calculate and update supplier's average ratings
-      const averageRatings = await Rating.aggregate([
-        { $match: { supplierId: mongoose.Types.ObjectId(supplierId) } },
-        {
-          $group: {
-            _id: null,
-            avgPrice: { $avg: '$ratings.price' },
-            avgDelivery: { $avg: '$ratings.delivery' },
-            avgQuality: { $avg: '$ratings.quality' },
-            avgOverall: { $avg: '$overallRating' },
-            totalRatings: { $sum: 1 }
-          }
-        }
-      ]);
-  
-      res.status(200).json({
-        success: true,
-        rating,
-        averageRatings: averageRatings[0]
-      });
-  
-    } catch (error) {
-      if (error.code === 11000) {
-        return res.status(400).json({
-          success: false,
-          message: 'This order has already been rated'
-        });
-      }
-  
-      res.status(500).json({
+  try {
+    const {
+      supplierId,
+      orderId,
+      ratings,
+      overallRating,
+      comment
+    } = req.body;
+    
+    const facilityId = req.user._id;
+
+    // Verify the user is a Healthcare Facility
+    const facility = await User.findById(facilityId);
+    if (!facility || facility.accountType !== 'Healthcare Facility') {
+      return res.status(403).json({
         success: false,
-        message: 'Error submitting rating',
-        error: error.message
+        message: 'Only healthcare facilities can submit ratings'
       });
     }
-  };
-  
+
+    // Verify the order exists and belongs to this facility
+    const order = await Order.findOne({
+      _id: orderId,
+      status: 'Delivered',
+      ratingSubmitted: { $ne: true }
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found or not eligible for rating'
+      });
+    }
+
+    // Create the rating - convert string IDs to ObjectIds
+    const rating = await Rating.create({
+      supplierId: new mongoose.Types.ObjectId(supplierId),
+      facilityId: new mongoose.Types.ObjectId(facilityId),
+      orderId: new mongoose.Types.ObjectId(orderId),
+      ratings,
+      overallRating,
+      comment
+    });
+
+    // Mark order as rated
+    await Order.findByIdAndUpdate(orderId, {
+      ratingSubmitted: true
+    });
+
+    // Calculate and update supplier's average ratings
+    const averageRatings = await Rating.aggregate([
+      { 
+        $match: { 
+          supplierId: new mongoose.Types.ObjectId(supplierId) 
+        } 
+      },
+      {
+        $group: {
+          _id: null,
+          avgPrice: { $avg: '$ratings.price' },
+          avgDelivery: { $avg: '$ratings.delivery' },
+          avgQuality: { $avg: '$ratings.quality' },
+          avgOverall: { $avg: '$overallRating' },
+          totalRatings: { $sum: 1 }
+        }
+      }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      rating,
+      averageRatings: averageRatings[0]
+    });
+
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'This order has already been rated'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Error submitting rating',
+      error: error.message
+    });
+  }
+};
   // Get ratings for a supplier with order details
   export const getSupplierRatings = async (req, res) => {
     try {
