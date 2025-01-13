@@ -268,77 +268,106 @@ export const getSupplierOrders = async (req, res) => {
 
 export const getHealthFacilityMonthlyPurchases = async (req, res) => {
   try {
+    // Get current date
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth(); // 0-11
+    const currentYear = currentDate.getFullYear();
+
+    // Calculate date range for last 12 months
+    const startDate = new Date(currentYear, currentMonth - 11, 1); // Go back 11 months
+    const endDate = new Date(currentYear, currentMonth + 1, 0); // End of current month
+
     // Aggregate monthly purchases for Health Facility
     const monthlyPurchases = await Order.aggregate([
-      // Match orders for the specific health facility
-      { $match: { healthFacilityId: req.user._id } },
-      
-      // Extract month and year from createdAt
-      { $addFields: {
-        month: { $month: '$createdAt' },
-        year: { $year: '$createdAt' }
-      }},
-      
-      // Group by month and year, sum total purchases
-      { $group: {
-        _id: { 
-          month: '$month', 
-          year: '$year' 
-        },
-        totalAmount: { $sum: '$totalPrice' },
-        orderCount: { $sum: 1 }
-      }},
-      
-      // Sort by year and month
-      { $sort: { 
-        '_id.year': 1, 
-        '_id.month': 1 
-      }},
-      
-      // Transform for frontend consumption
-      { $project: {
-        _id: 0,
-        month: '$_id.month',
-        year: '$_id.year',
-        totalAmount: 1,
-        orderCount: 1,
-        monthName: {
-          $arrayElemAt: [
-            [
-              'January', 'February', 'March', 'April', 'May', 'June', 
-              'July', 'August', 'September', 'October', 'November', 'December'
-            ],
-            { $subtract: ['$_id.month', 1] }
-          ]
+      // Match orders for the specific health facility and date range
+      {
+        $match: {
+          healthFacilityId: req.user._id,
+          createdAt: {
+            $gte: startDate,
+            $lte: endDate
+          }
         }
-      }}
+      },
+
+      // Extract month and year from createdAt
+      {
+        $addFields: {
+          month: { $month: '$createdAt' },
+          year: { $year: '$createdAt' }
+        }
+      },
+
+      // Group by month and year, sum total purchases
+      {
+        $group: {
+          _id: {
+            month: '$month',
+            year: '$year'
+          },
+          totalAmount: { $sum: '$totalPrice' },
+          orderCount: { $sum: 1 }
+        }
+      },
+
+      // Sort by year and month
+      {
+        $sort: {
+          '_id.year': 1,
+          '_id.month': 1
+        }
+      },
+
+      // Transform for frontend consumption
+      {
+        $project: {
+          _id: 0,
+          month: '$_id.month',
+          year: '$_id.year',
+          totalAmount: 1,
+          orderCount: 1,
+          monthName: {
+            $arrayElemAt: [
+              [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+              ],
+              { $subtract: ['$_id.month', 1] }
+            ]
+          }
+        }
+      }
     ]);
 
-    // Create a map of existing monthly data
-    const monthMap = new Map(monthlyPurchases.map(m => [m.month, m]));
+    // Generate last 12 months data with zero values for missing months
+    const last12Months = [];
+    for (let i = 0; i < 12; i++) {
+      const monthOffset = -11 + i; // Start from 11 months ago
+      const date = new Date(currentYear, currentMonth + monthOffset, 1);
+      const month = date.getMonth() + 1; // 1-12
+      const year = date.getFullYear();
 
-    // Generate full year data with zero values for missing months
-    const currentYear = new Date().getFullYear();
-    const fullYearData = Array.from({length: 12}, (_, i) => {
-      const month = i + 1;
-      const existingData = monthMap.get(month);
-      
-      return existingData || {
+      // Find existing data for this month/year
+      const existingData = monthlyPurchases.find(m => 
+        m.month === month && m.year === year
+      );
+
+      last12Months.push(existingData || {
         month,
-        year: currentYear,
+        year,
         totalAmount: 0,
         orderCount: 0,
         monthName: [
-          'January', 'February', 'March', 'April', 'May', 'June', 
+          'January', 'February', 'March', 'April', 'May', 'June',
           'July', 'August', 'September', 'October', 'November', 'December'
-        ][i]
-      };
-    });
+        ][month - 1]
+      });
+    }
 
     // Prepare the response
     res.status(200).json({
       message: 'Monthly Purchases retrieved successfully',
-      monthlyData: fullYearData
+      monthlyData: last12Months
     });
   } catch (error) {
     console.error('Error retrieving health facility monthly purchases:', error);
@@ -351,77 +380,106 @@ export const getHealthFacilityMonthlyPurchases = async (req, res) => {
 
 export const getSupplierMonthlySales = async (req, res) => {
   try {
+    // Get current date
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth(); // 0-11
+    const currentYear = currentDate.getFullYear();
+
+    // Calculate date range for last 12 months
+    const startDate = new Date(currentYear, currentMonth - 11, 1); // Go back 11 months
+    const endDate = new Date(currentYear, currentMonth + 1, 0); // End of current month
+
     // Aggregate monthly sales for Supplier
     const monthlySales = await Order.aggregate([
-      // Match orders for the specific supplier
-      { $match: { supplierId: req.user._id } },
-      
-      // Extract month and year from createdAt
-      { $addFields: {
-        month: { $month: '$createdAt' },
-        year: { $year: '$createdAt' }
-      }},
-      
-      // Group by month and year, sum total sales
-      { $group: {
-        _id: { 
-          month: '$month', 
-          year: '$year' 
-        },
-        totalAmount: { $sum: '$totalPrice' },
-        orderCount: { $sum: 1 }
-      }},
-      
-      // Sort by year and month
-      { $sort: { 
-        '_id.year': 1, 
-        '_id.month': 1 
-      }},
-      
-      // Transform for frontend consumption
-      { $project: {
-        _id: 0,
-        month: '$_id.month',
-        year: '$_id.year',
-        totalAmount: 1,
-        orderCount: 1,
-        monthName: {
-          $arrayElemAt: [
-            [
-              'January', 'February', 'March', 'April', 'May', 'June', 
-              'July', 'August', 'September', 'October', 'November', 'December'
-            ],
-            { $subtract: ['$_id.month', 1] }
-          ]
+      // Match orders for the specific supplier and date range
+      {
+        $match: {
+          supplierId: req.user._id,
+          createdAt: {
+            $gte: startDate,
+            $lte: endDate
+          }
         }
-      }}
+      },
+
+      // Extract month and year from createdAt
+      {
+        $addFields: {
+          month: { $month: '$createdAt' },
+          year: { $year: '$createdAt' }
+        }
+      },
+
+      // Group by month and year, sum total sales
+      {
+        $group: {
+          _id: {
+            month: '$month',
+            year: '$year'
+          },
+          totalAmount: { $sum: '$totalPrice' },
+          orderCount: { $sum: 1 }
+        }
+      },
+
+      // Sort by year and month
+      {
+        $sort: {
+          '_id.year': 1,
+          '_id.month': 1
+        }
+      },
+
+      // Transform for frontend consumption
+      {
+        $project: {
+          _id: 0,
+          month: '$_id.month',
+          year: '$_id.year',
+          totalAmount: 1,
+          orderCount: 1,
+          monthName: {
+            $arrayElemAt: [
+              [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+              ],
+              { $subtract: ['$_id.month', 1] }
+            ]
+          }
+        }
+      }
     ]);
 
-    // Create a map of existing monthly data
-    const monthMap = new Map(monthlySales.map(m => [m.month, m]));
+    // Generate last 12 months data with zero values for missing months
+    const last12Months = [];
+    for (let i = 0; i < 12; i++) {
+      const monthOffset = -11 + i; // Start from 11 months ago
+      const date = new Date(currentYear, currentMonth + monthOffset, 1);
+      const month = date.getMonth() + 1; // 1-12
+      const year = date.getFullYear();
 
-    // Generate full year data with zero values for missing months
-    const currentYear = new Date().getFullYear();
-    const fullYearData = Array.from({length: 12}, (_, i) => {
-      const month = i + 1;
-      const existingData = monthMap.get(month);
-      
-      return existingData || {
+      // Find existing data for this month/year
+      const existingData = monthlySales.find(m => 
+        m.month === month && m.year === year
+      );
+
+      last12Months.push(existingData || {
         month,
-        year: currentYear,
+        year,
         totalAmount: 0,
         orderCount: 0,
         monthName: [
-          'January', 'February', 'March', 'April', 'May', 'June', 
+          'January', 'February', 'March', 'April', 'May', 'June',
           'July', 'August', 'September', 'October', 'November', 'December'
-        ][i]
-      };
-    });
+        ][month - 1]
+      });
+    }
 
     // Prepare the response
     res.status(200).json({
       message: 'Monthly Sales retrieved successfully',
-      monthlyData: fullYearData
+      monthlyData: last12Months
     });
   } catch (error) {
     console.error('Error retrieving supplier monthly sales:', error);

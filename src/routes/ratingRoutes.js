@@ -16,7 +16,7 @@ const router = express.Router();
 
 // Health Facility Routes
 // Submit a rating for an order
-router.post('/ratings', authMiddleware, submitRating);
+router.post('/rate', authMiddleware, submitRating);
 
 // Get pending ratings for the facility (unrated delivered orders)
 router.get('/health-facility/pending-ratings', authMiddleware, getPendingRatings);

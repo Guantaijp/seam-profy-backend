@@ -6,7 +6,11 @@ import User from '../models/User.js'; // Assuming you already have the User mode
 
 export const submitRating = async (req, res) => {
     try {
-      const { supplierId, orderId, ratings, overallRating, comment } = req.body;
+      const { supplierId, 
+        // orderId,
+         ratings, 
+         overallRating, 
+         comment } = req.body;
       const facilityId = req.user._id;
   
       // Verify the user is a Healthcare Facility
@@ -19,34 +23,34 @@ export const submitRating = async (req, res) => {
       }
   
       // Verify the order exists and belongs to this facility
-      const order = await Order.findOne({
-        _id: orderId,
-        facilityId,
-        status: 'DELIVERED', // Only allow rating completed orders
-        ratingSubmitted: { $ne: true } // Ensure order hasn't been rated
-      });
+    //   const order = await Order.findOne({
+    //     _id: orderId,
+    //     facilityId,
+    //     status: 'DELIVERED', // Only allow rating completed orders
+    //     ratingSubmitted: { $ne: true } // Ensure order hasn't been rated
+    //   });
   
-      if (!order) {
-        return res.status(404).json({
-          success: false,
-          message: 'Order not found or not eligible for rating'
-        });
-      }
+    //   if (!order) {
+    //     return res.status(404).json({
+    //       success: false,
+    //       message: 'Order not found or not eligible for rating'
+    //     });
+    //   }
   
       // Create the rating
       const rating = await Rating.create({
         supplierId,
         facilityId,
-        orderId,
+        // orderId,
         ratings,
         overallRating,
         comment
       });
   
       // Mark order as rated
-      await Order.findByIdAndUpdate(orderId, {
-        ratingSubmitted: true
-      });
+    //   await Order.findByIdAndUpdate(orderId, {
+    //     ratingSubmitted: true
+    //   });
   
       // Calculate and update supplier's average ratings
       const averageRatings = await Rating.aggregate([

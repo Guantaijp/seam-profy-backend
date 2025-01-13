@@ -12,11 +12,11 @@ const RatingSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  orderId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Order',
-    required: true
-  },
+//   orderId: {
+//     type: mongoose.Schema.Types.ObjectId,
+//     ref: 'Order',
+//     required: true
+//   },
   ratings: {
     price: {
       type: Number,
