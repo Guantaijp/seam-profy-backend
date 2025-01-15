@@ -9,4 +9,5 @@ router.post('/callback/', handleCallback);
 router.post('/initiate', initiateMPESAPayment);
 router.post('/confirm/:checkoutRequestId', confirmPayment);
 router.get('/status/:orderId',  getPaymentStatus);
+
 export default router;

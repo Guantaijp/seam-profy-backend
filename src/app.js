@@ -18,7 +18,7 @@ import paymentsRoutes from './routes/paymentsRoutes.js';
 import invoicesRoutes from './routes/invoiceRoutes.js';
 import mpesaRoutes from './routes/mpesaRoute.js';
 import ratingRoutes from './routes/ratingRoutes.js';
-
+import creditRoutes from './routes/creditRequestRoutes.js';
 
 // Middleware imports
 import errorMiddleware from './middleware/errorMiddleware.js';
@@ -97,6 +97,9 @@ app.use('/api/payments', paymentsRoutes);
 app.use('/api/invoices', invoicesRoutes);
 app.use('/api/mpesa', mpesaRoutes);
 app.use('/api/ratings', ratingRoutes);
+app.use('/api/credit', creditRoutes);
+
+
 // Handle file upload errors
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
