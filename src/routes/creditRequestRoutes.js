@@ -3,7 +3,8 @@ import {
   createCreditRequest, 
   approveCreditRequest, 
   makePayment,
-  getMyCreditRequests 
+  getMyCreditRequests ,
+  getAllCreditRequests
 } from '../controllers/creditRequestController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 
@@ -11,7 +12,7 @@ const router = express.Router();
 
 // Get credit requests
 router.get('/my-requests', authMiddleware, getMyCreditRequests);
-
+router.get('/admin/credit-requests', getAllCreditRequests);
 // Create credit request
 router.post('/', authMiddleware, createCreditRequest);
 

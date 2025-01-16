@@ -273,3 +273,72 @@ export const makePayment = async (req, res) => {
     session.endSession();
   }
 };
+
+export const getAllCreditRequests = async (req, res) => {
+    try {
+      const { status, page = 1, limit = 10 } = req.query;
+  
+      // Create a filter based on the status, if provided
+      const filter = status ? { status: status.charAt(0).toUpperCase() + status.slice(1).toLowerCase() } : {};
+  
+      // Calculate pagination values
+      const skip = (page - 1) * limit;
+  
+      // Fetch all credit requests
+      const allCreditRequests = await CreditRequest.find(filter)
+        .sort({ createdAt: -1 })
+        .populate('orderId', 'orderNumber')
+        .populate('healthFacilityId', 'name');
+  
+      // Calculate summaries for all requests
+      const summary = {
+        totalRequests: allCreditRequests.length,
+        totalAmount: 0,
+        totalPaid: 0,
+        totalRemaining: 0,
+        status: {
+          pending: 0,
+          approved: 0,
+          paid: 0,
+          overdue: 0
+        }
+      };
+  
+      allCreditRequests.forEach(request => {
+        summary.totalAmount += request.repaymentAmount;
+        summary.totalPaid += request.paidAmount;
+        summary.totalRemaining += (request.repaymentAmount - request.paidAmount);
+        summary.status[request.status.toLowerCase()]++;
+      });
+  
+      // Group all requests by status
+      const grouped = {
+        active: allCreditRequests.filter(req => ['Approved', 'Overdue'].includes(req.status)),
+        completed: allCreditRequests.filter(req => req.status === 'Paid'),
+        pending: allCreditRequests.filter(req => req.status === 'Pending')
+      };
+  
+      // Apply pagination to the filtered requests
+      const paginatedRequests = allCreditRequests.slice(skip, skip + Number(limit));
+  
+      res.json({
+        message: 'Credit requests retrieved successfully',
+        summary,
+        requests: grouped,
+        pagination: {
+          totalRequests: allCreditRequests.length,
+          currentPage: Number(page),
+          totalPages: Math.ceil(allCreditRequests.length / limit),
+          limit: Number(limit)
+        },
+        currentPageRequests: paginatedRequests
+      });
+  
+    } catch (error) {
+      console.error('Error fetching all credit requests:', error);
+      res.status(500).json({
+        message: 'Failed to fetch credit requests',
+        error: error.message
+      });
+    }
+  };
