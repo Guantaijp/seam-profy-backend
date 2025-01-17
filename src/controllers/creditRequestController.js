@@ -125,7 +125,8 @@ export const getMyCreditRequests = async (req, res) => {
         pending: 0,
         approved: 0,
         paid: 0,
-        overdue: 0
+        overdue: 0,
+        rejected: 0  // Added rejected status to the summary
       }
     };
 
@@ -133,14 +134,16 @@ export const getMyCreditRequests = async (req, res) => {
       summary.totalAmount += request.repaymentAmount;
       summary.totalPaid += request.paidAmount;
       summary.totalRemaining += (request.repaymentAmount - request.paidAmount);
-      summary.status[request.status.toLowerCase()]++;
+      summary.status[request.status.toLowerCase()]++;  // Increment status count
     });
 
-    // Group requests by status
+    // Group requests by individual status
     const grouped = {
-      active: creditRequests.filter(req => ['Approved', 'Overdue'].includes(req.status)),
-      completed: creditRequests.filter(req => req.status === 'Paid'),
-      pending: creditRequests.filter(req => req.status === 'Pending')
+      pending: creditRequests.filter(req => req.status === 'pending'),
+      approved: creditRequests.filter(req => req.status === 'approved'),
+      paid: creditRequests.filter(req => req.status === 'paid'),
+      overdue: creditRequests.filter(req => req.status === 'overdue'),
+      rejected: creditRequests.filter(req => req.status === 'rejected')  // Added rejected group
     };
 
     res.json({
@@ -156,6 +159,8 @@ export const getMyCreditRequests = async (req, res) => {
     });
   }
 };
+
+
 
 export const updateCreditRequestStatus = async (req, res) => {
   const session = await mongoose.startSession();
