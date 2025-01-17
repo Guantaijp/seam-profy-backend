@@ -157,57 +157,54 @@ export const getMyCreditRequests = async (req, res) => {
   }
 };
 
-export const approveCreditRequest = async (req, res) => {
+export const updateCreditRequestStatus = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
     const { creditRequestId } = req.params;
-    
+    const { newStatus } = req.body;
+
+    const validStatuses = ['pending', 'approved', 'rejected', 'paid', 'overdue'];
+
+    // Validate the new status
+    if (!validStatuses.includes(newStatus)) {
+      return res.status(400).json({ message: `Invalid status: ${newStatus}` });
+    }
+
+    // Fetch the credit request
     const creditRequest = await CreditRequest.findById(creditRequestId);
     if (!creditRequest) {
       return res.status(404).json({ message: 'Credit request not found' });
     }
 
-    if (creditRequest.status !== 'Pending') {
-      return res.status(400).json({ message: 'Credit request cannot be approved' });
-    }
+    // Update the status
+    creditRequest.status = newStatus;
 
-    // Update credit request
-    const dueDate = new Date();
-    dueDate.setMonth(dueDate.getMonth() + creditRequest.termMonths);
-
-    creditRequest.status = 'Approved';
-    creditRequest.approvedAt = new Date();
-    creditRequest.dueDate = dueDate;
-
+    // Save the updated credit request
     await creditRequest.save({ session });
 
-    // Update order status
-    await Order.findByIdAndUpdate(
-      creditRequest.orderId,
-      { paymentStatus: 'Invoiced' },
-      { session }
-    );
-
+    // Commit the transaction
     await session.commitTransaction();
 
     res.json({
-      message: 'Credit request approved successfully',
-      creditRequest
+      message: `Credit request status updated to ${newStatus} successfully`,
+      creditRequest,
     });
-
   } catch (error) {
+    // Rollback the transaction in case of an error
     await session.abortTransaction();
-    console.error('Error approving credit request:', error);
+    console.error('Error updating credit request status:', error);
     res.status(500).json({
-      message: 'Failed to approve credit request',
-      error: error.message
+      message: 'Failed to update credit request status',
+      error: error.message,
     });
   } finally {
     session.endSession();
   }
 };
+
+
 
 export const makePayment = async (req, res) => {
   const session = await mongoose.startSession();

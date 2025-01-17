@@ -1,8 +1,9 @@
 import express from 'express';
 import { 
   createCreditRequest, 
-  approveCreditRequest, 
+  // approveCreditRequest, 
   makePayment,
+  updateCreditRequestStatus,
   getMyCreditRequests ,
   getAllCreditRequests
 } from '../controllers/creditRequestController.js';
@@ -17,7 +18,7 @@ router.get('/admin/credit-requests', getAllCreditRequests);
 router.post('/', authMiddleware, createCreditRequest);
 
 // Credit request actions
-router.patch('/:creditRequestId/approve', authMiddleware, approveCreditRequest);
+router.patch('/:creditRequestId/status', authMiddleware,updateCreditRequestStatus);
 router.post('/:creditRequestId/payment', authMiddleware, makePayment);
 
 export default router;
