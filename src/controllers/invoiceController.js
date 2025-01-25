@@ -125,10 +125,10 @@ export const downloadInvoice = async (req, res) => {
       const textColor = '#2C3E50'; // Consistent text color
 
       // Add company logo (Top Center)
-      const logoPath = path.join(process.cwd(), 'public', 'images', 'Logo1.png');
-      if (fs.existsSync(logoPath)) {
-          doc.image(logoPath, doc.page.width / 2 - 75, 30, { width: 150 }); // Centered
-      }
+      // const logoPath = path.join(process.cwd(), 'public', 'images', 'Logo1.png');
+      // if (fs.existsSync(logoPath)) {
+      //     doc.image(logoPath, doc.page.width / 2 - 75, 30, { width: 150 }); // Centered
+      // }
 
       doc.moveDown(4);
 
