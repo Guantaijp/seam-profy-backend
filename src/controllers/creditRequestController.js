@@ -2,6 +2,9 @@ import mongoose from 'mongoose';
 import CreditRequest from '../models/Credit.js';
 import Order from '../models/Order.js';
 import Counter from '../models/Counter.js';
+import moment from 'moment';
+import Invoice from '../models/Invoice.js';
+import User from '../models/User.js'
 
 const getNextCreditRequestNumber = async () => {
   try {
@@ -58,6 +61,10 @@ export const createCreditRequest = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized to request credit for this order' });
     }
 
+    // Calculate credit score
+    const creditScoreResult = await calculateCreditScore(req.user._id, req.user);
+    const creditScore = creditScoreResult.score;
+
     // Calculate repayment amount
     const monthlyInterest = interestRate / 100;
     const totalInterest = amount * monthlyInterest * termMonths;
@@ -66,7 +73,7 @@ export const createCreditRequest = async (req, res) => {
     // Generate credit request number
     const creditRequestNumber = await getNextCreditRequestNumber();
 
-    // Create new credit request
+    // Create new credit request with credit score
     const newCreditRequest = new CreditRequest({
       creditRequestNumber,
       orderId: order._id,
@@ -76,7 +83,8 @@ export const createCreditRequest = async (req, res) => {
       interestRate,
       termMonths,
       repaymentAmount,
-      allowEarlyRepayment
+      allowEarlyRepayment,
+      creditScore
     });
 
     await newCreditRequest.save({ session });
@@ -115,18 +123,22 @@ export const getMyCreditRequests = async (req, res) => {
     const creditRequests = await CreditRequest.find({ healthFacilityId })
       .sort({ createdAt: -1 });
 
+    // Calculate current credit score
+    const currentCreditScore = await calculateCreditScore(healthFacilityId, req.user);
+
     // Calculate summaries
     const summary = {
       totalRequests: creditRequests.length,
       totalAmount: 0,
       totalPaid: 0,
       totalRemaining: 0,
+      currentCreditScore: currentCreditScore.score,
       status: {
         pending: 0,
         approved: 0,
         paid: 0,
         overdue: 0,
-        rejected: 0  // Added rejected status to the summary
+        rejected: 0
       }
     };
 
@@ -134,7 +146,7 @@ export const getMyCreditRequests = async (req, res) => {
       summary.totalAmount += request.repaymentAmount;
       summary.totalPaid += request.paidAmount;
       summary.totalRemaining += (request.repaymentAmount - request.paidAmount);
-      summary.status[request.status.toLowerCase()]++;  // Increment status count
+      summary.status[request.status.toLowerCase()]++;
     });
 
     // Group requests by individual status
@@ -143,7 +155,7 @@ export const getMyCreditRequests = async (req, res) => {
       approved: creditRequests.filter(req => req.status === 'approved'),
       paid: creditRequests.filter(req => req.status === 'paid'),
       overdue: creditRequests.filter(req => req.status === 'overdue'),
-      rejected: creditRequests.filter(req => req.status === 'rejected')  // Added rejected group
+      rejected: creditRequests.filter(req => req.status === 'rejected')
     };
 
     res.json({
@@ -160,6 +172,82 @@ export const getMyCreditRequests = async (req, res) => {
   }
 };
 
+export const getAllCreditRequests = async (req, res) => {
+  try {
+    const { status, page = 1, limit = 10 } = req.query;
+
+    // Create a filter based on the status, if provided
+    const filter = status ? { status: status.charAt(0).toUpperCase() + status.slice(1).toLowerCase() } : {};
+
+    // Calculate pagination values
+    const skip = (page - 1) * limit;
+
+    // Fetch all credit requests
+    const allCreditRequests = await CreditRequest.find(filter)
+      .sort({ createdAt: -1 })
+      .populate('orderId', 'orderNumber')
+      .populate('healthFacilityId', 'name');
+
+    // Update credit scores for all requests if admin
+    if (req.user.accountType === 'Admin') {
+      for (let request of allCreditRequests) {
+        const creditScore = await calculateCreditScore(request.healthFacilityId, req.user);
+        request.currentCreditScore = creditScore.score;
+      }
+    }
+
+    // Calculate summaries
+    const summary = {
+      totalRequests: allCreditRequests.length,
+      totalAmount: 0,
+      totalPaid: 0,
+      totalRemaining: 0,
+      status: {
+        pending: 0,
+        approved: 0,
+        paid: 0,
+        overdue: 0
+      }
+    };
+
+    allCreditRequests.forEach(request => {
+      summary.totalAmount += request.repaymentAmount;
+      summary.totalPaid += request.paidAmount;
+      summary.totalRemaining += (request.repaymentAmount - request.paidAmount);
+      summary.status[request.status.toLowerCase()]++;
+    });
+
+    // Group all requests by status
+    const grouped = {
+      active: allCreditRequests.filter(req => ['Approved', 'Overdue'].includes(req.status)),
+      completed: allCreditRequests.filter(req => req.status === 'Paid'),
+      pending: allCreditRequests.filter(req => req.status === 'Pending')
+    };
+
+    // Apply pagination to the filtered requests
+    const paginatedRequests = allCreditRequests.slice(skip, skip + Number(limit));
+
+    res.json({
+      message: 'Credit requests retrieved successfully',
+      summary,
+      requests: grouped,
+      pagination: {
+        totalRequests: allCreditRequests.length,
+        currentPage: Number(page),
+        totalPages: Math.ceil(allCreditRequests.length / limit),
+        limit: Number(limit)
+      },
+      currentPageRequests: paginatedRequests
+    });
+
+  } catch (error) {
+    console.error('Error fetching all credit requests:', error);
+    res.status(500).json({
+      message: 'Failed to fetch credit requests',
+      error: error.message
+    });
+  }
+};
 
 
 export const updateCreditRequestStatus = async (req, res) => {
@@ -210,137 +298,176 @@ export const updateCreditRequestStatus = async (req, res) => {
 };
 
 
-
-export const makePayment = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
+// Modified calculateCreditScore function with admin access
+export const calculateCreditScore = async (healthFacilityId, requestingUser) => {
   try {
-    const { creditRequestId } = req.params;
-    const { amount, paymentMethod, transactionId } = req.body;
-
-    const creditRequest = await CreditRequest.findById(creditRequestId);
-    if (!creditRequest) {
-      return res.status(404).json({ message: 'Credit request not found' });
-    }
-
-    if (creditRequest.status !== 'Approved' && creditRequest.status !== 'Overdue') {
-      return res.status(400).json({ message: 'Credit request is not active' });
-    }
-
-    // Validate early repayment
-    const remainingAmount = creditRequest.repaymentAmount - creditRequest.paidAmount;
-    if (!creditRequest.allowEarlyRepayment && amount > remainingAmount) {
-      return res.status(400).json({ message: 'Early repayment is not allowed' });
-    }
-
-    // Process payment
-    creditRequest.paidAmount += amount;
-    creditRequest.lastPaymentDate = new Date();
-    creditRequest.paymentHistory.push({
-      amount,
-      date: new Date(),
-      paymentMethod,
-      transactionId
+    // First verify the health facility exists
+    const facilityDetails = await User.findOne({
+      _id: healthFacilityId
     });
-
-    // Update status
-    if (creditRequest.paidAmount >= creditRequest.repaymentAmount) {
-      creditRequest.status = 'Paid';
-      await Order.findByIdAndUpdate(
-        creditRequest.orderId,
-        { paymentStatus: 'Paid' },
-        { session }
-      );
-    } else if (new Date() > creditRequest.dueDate) {
-      creditRequest.status = 'Overdue';
+    
+    // More specific error handling for facility validation
+    if (!facilityDetails) {
+      throw new Error('Healthcare Facility not found');
     }
 
-    await creditRequest.save({ session });
-    await session.commitTransaction();
+    // Check if user is authorized (either admin or the facility itself)
+    if (requestingUser.accountType !== 'Admin' && 
+        facilityDetails.accountType !== 'Healthcare Facility') {
+      throw new Error('Invalid account type - must be a Healthcare Facility or Admin');
+    }
 
-    res.json({
-      message: 'Payment processed successfully',
-      creditRequest
-    });
+    // Fetch necessary data for scoring with error handling
+    const [pastInvoices, pastOrders, pastFinancing] = await Promise.all([
+      Invoice.find({ healthFacilityId }),
+      Order.find({ 
+        healthFacilityId, 
+        createdAt: { $gte: moment().subtract(3, 'months').toDate() }
+      }),
+      CreditRequest.find({ healthFacilityId })
+    ]);
+
+    let score = 0;
+
+    // [Previous scoring logic remains the same]
+    // a. Past Invoice Repayment History (30%)
+    const totalInvoices = pastInvoices.length;
+    if (totalInvoices > 0) {
+      const onTimeInvoices = pastInvoices.filter(invoice => invoice.isPaidOnTime).length;
+      const repaymentHistoryPercentage = (onTimeInvoices / totalInvoices) * 100;
+
+      if (repaymentHistoryPercentage >= 90) score += 30;
+      else if (repaymentHistoryPercentage >= 70) score += 20;
+      else if (repaymentHistoryPercentage >= 50) score += 10;
+    }
+
+    // b. Past Order Values (20%)
+    const totalOrderValue = pastOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    if (totalOrderValue >= 100000) score += 20;
+    else if (totalOrderValue >= 50000) score += 15;
+    else if (totalOrderValue >= 25000) score += 10;
+    else score += 5;
+
+    // c. Ordering Frequency (15%)
+    const months = 3;
+    const averageOrdersPerMonth = pastOrders.length / months;
+    if (averageOrdersPerMonth >= 10) score += 15;
+    else if (averageOrdersPerMonth >= 5) score += 10;
+    else if (averageOrdersPerMonth >= 1) score += 5;
+
+    // d. Number of Years in Business (10%)
+    const registrationDate = facilityDetails.registrationDate || facilityDetails.createdAt;
+    const yearsInBusiness = moment().diff(registrationDate, 'years');
+    if (yearsInBusiness >= 5) score += 10;
+    else if (yearsInBusiness >= 3) score += 7;
+    else if (yearsInBusiness >= 1) score += 5;
+
+    // e. Past Financing History (15%)
+    const totalRequests = pastFinancing.length;
+    if (totalRequests > 0) {
+      const successfullyPaidRequests = pastFinancing.filter(request => request.status === 'Paid').length;
+      const financingHistoryPercentage = (successfullyPaidRequests / totalRequests) * 100;
+
+      if (financingHistoryPercentage >= 90) score += 15;
+      else if (financingHistoryPercentage >= 70) score += 10;
+      else if (financingHistoryPercentage >= 50) score += 5;
+    }
+
+    // Add admin-specific information to the response
+    const response = {
+      healthFacilityId,
+      score,
+      details: {
+        facilityName: facilityDetails.name,
+        accountType: facilityDetails.accountType,
+        totalOrders: pastOrders.length,
+        totalInvoices,
+        yearsInBusiness,
+        lastCalculated: new Date()
+      }
+    };
+
+    // Add additional details for admin users
+    if (requestingUser.accountType === 'Admin') {
+      response.details.adminView = {
+        registrationDate,
+        totalOrderValue,
+        averageOrdersPerMonth,
+        repaymentHistory: {
+          totalInvoices,
+          onTimePayments: pastInvoices.filter(invoice => invoice.isPaidOnTime).length,
+        },
+        financingHistory: {
+          totalRequests,
+          successfulPayments: pastFinancing.filter(request => request.status === 'Paid').length
+        }
+      };
+    }
+
+    return response;
 
   } catch (error) {
-    await session.abortTransaction();
-    console.error('Error processing payment:', error);
-    res.status(500).json({
-      message: 'Failed to process payment',
-      error: error.message
+    const errorMessage = error.message || 'Failed to calculate credit score';
+    console.error('Error calculating credit score:', {
+      healthFacilityId,
+      error: errorMessage,
+      stack: error.stack
     });
-  } finally {
-    session.endSession();
+    throw new Error(errorMessage);
   }
 };
 
-export const getAllCreditRequests = async (req, res) => {
-    try {
-      const { status, page = 1, limit = 10 } = req.query;
-  
-      // Create a filter based on the status, if provided
-      const filter = status ? { status: status.charAt(0).toUpperCase() + status.slice(1).toLowerCase() } : {};
-  
-      // Calculate pagination values
-      const skip = (page - 1) * limit;
-  
-      // Fetch all credit requests
-      const allCreditRequests = await CreditRequest.find(filter)
-        .sort({ createdAt: -1 })
-        .populate('orderId', 'orderNumber')
-        .populate('healthFacilityId', 'name');
-  
-      // Calculate summaries for all requests
-      const summary = {
-        totalRequests: allCreditRequests.length,
-        totalAmount: 0,
-        totalPaid: 0,
-        totalRemaining: 0,
-        status: {
-          pending: 0,
-          approved: 0,
-          paid: 0,
-          overdue: 0
-        }
-      };
-  
-      allCreditRequests.forEach(request => {
-        summary.totalAmount += request.repaymentAmount;
-        summary.totalPaid += request.paidAmount;
-        summary.totalRemaining += (request.repaymentAmount - request.paidAmount);
-        summary.status[request.status.toLowerCase()]++;
+// Modified getCreditScore endpoint with admin access
+export const getCreditScore = async (req, res) => {
+  try {
+    // Allow admins to specify a different facility ID
+    const healthFacilityId = req.query.facilityId || req.user._id;
+
+    // Basic validation
+    if (!healthFacilityId) {
+      return res.status(400).json({
+        message: 'Missing health facility ID',
+        error: 'Facility ID is required'
       });
-  
-      // Group all requests by status
-      const grouped = {
-        active: allCreditRequests.filter(req => ['Approved', 'Overdue'].includes(req.status)),
-        completed: allCreditRequests.filter(req => req.status === 'Paid'),
-        pending: allCreditRequests.filter(req => req.status === 'Pending')
-      };
-  
-      // Apply pagination to the filtered requests
-      const paginatedRequests = allCreditRequests.slice(skip, skip + Number(limit));
-  
-      res.json({
-        message: 'Credit requests retrieved successfully',
-        summary,
-        requests: grouped,
-        pagination: {
-          totalRequests: allCreditRequests.length,
-          currentPage: Number(page),
-          totalPages: Math.ceil(allCreditRequests.length / limit),
-          limit: Number(limit)
-        },
-        currentPageRequests: paginatedRequests
-      });
-  
-    } catch (error) {
-      console.error('Error fetching all credit requests:', error);
-      res.status(500).json({
-        message: 'Failed to fetch credit requests',
+    }
+
+    // Calculate the credit score with user context
+    const creditScore = await calculateCreditScore(healthFacilityId, req.user);
+
+    res.status(200).json({
+      success: true,
+      message: 'Credit score calculated successfully',
+      data: creditScore
+    });
+
+  } catch (error) {
+    console.error('Error in getCreditScore:', {
+      userId: req.user._id,
+      error: error.message,
+      stack: error.stack
+    });
+
+    // Send appropriate error response based on error type
+    if (error.message.includes('not found')) {
+      return res.status(404).json({
+        success: false,
+        message: 'Healthcare facility not found',
         error: error.message
       });
     }
-  };
+
+    if (error.message.includes('Invalid account type')) {
+      return res.status(403).json({
+        success: false,
+        message: 'Account type not authorized',
+        error: error.message
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to calculate credit score',
+      error: error.message
+    });
+  }
+};

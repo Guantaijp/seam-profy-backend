@@ -1,65 +1,63 @@
-// models/CreditRequest.js
 import mongoose from 'mongoose';
 
 const creditRequestSchema = new mongoose.Schema({
   creditRequestNumber: {
     type: String,
     required: true,
-    unique: true,
+    unique: true
   },
   orderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Order',
-    required: true,
+    required: true
   },
   orderNumber: {
     type: String,
-    required: true,
+    required: true
   },
   healthFacilityId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
+    required: true
   },
   amount: {
     type: Number,
-    required: true,
+    required: true
   },
   interestRate: {
     type: Number,
-    required: true,
+    required: true
   },
   termMonths: {
     type: Number,
-    required: true,
+    required: true
   },
   repaymentAmount: {
     type: Number,
-    required: true,
+    required: true
   },
-  allowEarlyRepayment: {
-    type: Boolean,
-    default: true,
+  paidAmount: {
+    type: Number,
+    default: 0
   },
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected', 'paid', 'overdue'],
-    default: 'pending',
+    default: 'pending'
   },
-  approvedAt: Date,
-  dueDate: Date,
-  paidAmount: {
+  allowEarlyRepayment: {
+    type: Boolean,
+    default: true
+  },
+  creditScore: {
     type: Number,
-    default: 0,
+    required: true
   },
-  lastPaymentDate: Date,
-  paymentHistory: [{
-    amount: Number,
-    date: Date,
-    paymentMethod: String,
-    transactionId: String
-  }]
-}, { timestamps: true });
+  currentCreditScore: {
+    type: Number
+  }
+}, {
+  timestamps: true
+});
 
-const CreditRequest = mongoose.model('CreditRequest', creditRequestSchema);
-export default CreditRequest;
+export default mongoose.model('CreditRequest', creditRequestSchema);
