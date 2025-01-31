@@ -65,6 +65,9 @@ export const createCreditRequest = async (req, res) => {
     const creditScoreResult = await calculateCreditScore(req.user._id, req.user);
     const creditScore = creditScoreResult.score;
 
+    // Determine status based on credit score
+    const status = creditScore > 80 ? 'approved' : 'pending';
+
     // Calculate repayment amount
     const monthlyInterest = interestRate / 100;
     const totalInterest = amount * monthlyInterest * termMonths;
@@ -73,7 +76,7 @@ export const createCreditRequest = async (req, res) => {
     // Generate credit request number
     const creditRequestNumber = await getNextCreditRequestNumber();
 
-    // Create new credit request with credit score
+    // Create new credit request with credit score and status
     const newCreditRequest = new CreditRequest({
       creditRequestNumber,
       orderId: order._id,
@@ -84,7 +87,8 @@ export const createCreditRequest = async (req, res) => {
       termMonths,
       repaymentAmount,
       allowEarlyRepayment,
-      creditScore
+      creditScore,
+      status
     });
 
     await newCreditRequest.save({ session });
@@ -171,7 +175,6 @@ export const getMyCreditRequests = async (req, res) => {
     });
   }
 };
-
 export const getAllCreditRequests = async (req, res) => {
   try {
     const { status, page = 1, limit = 10 } = req.query;
