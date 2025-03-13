@@ -1,84 +1,184 @@
 import Product from '../models/ProductSchema.js';
 import asyncHandler from '../middleware/asyncHandler.js';
+import envConfig from '../config/envConfig.js';
+import { v2 as cloudinary } from 'cloudinary';
+import path from 'path';
+import fs from 'fs';
 
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: envConfig.CLOUDINARY_CLOUD_NAME,
+  api_key: envConfig.CLOUDINARY_API_KEY,
+  api_secret: envConfig.CLOUDINARY_API_SECRET,
+});
 // @desc    Create a new product
 // @route   POST /api/products
 // @access  Private (Supplier only)
 export const createProduct = asyncHandler(async (req, res) => {
-  const { 
-    name, description, category, 
-    dosageForm, strength, quantityAvailable, 
-    unitPrice, expiryDate, batchNumber, storageConditions 
+  console.log('📌 Incoming request to create product');
+  
+  // Log file information if it exists
+  if (req.file) {
+    console.log('📂 Uploaded File:', {
+      fieldname: req.file.fieldname,
+      filename: req.file.filename,
+      path: req.file.path,
+      size: req.file.size
+    });
+  } else {
+    console.log('❌ No file uploaded with request');
+  }
+
+  // Extract data from request body
+  const {
+    name,
+    description,
+    category,
+    dosageForm,
+    strength,
+    batchNumber,
+    storageConditions,
+    expiryDate: rawExpiryDate,
+    quantityAvailable: rawQuantity,
+    unitPrice: rawPrice,
   } = req.body;
 
   // Ensure only suppliers can create products
   if (req.user.accountType !== 'Supplier') {
     res.status(403);
-    throw new Error('Only suppliers can create products');
+    throw new Error('Only suppliers can create products.');
   }
 
+  // Validate required fields
+  if (!name || !category) {
+    res.status(400);
+    throw new Error('Product name and category are required.');
+  }
+
+  // Parse and validate numeric fields
+  const quantityAvailable = parseFloat(rawQuantity);
+  if (isNaN(quantityAvailable) || quantityAvailable < 0) {
+    res.status(400);
+    throw new Error('Quantity must be a non-negative number.');
+  }
+
+  const unitPrice = parseFloat(rawPrice);
+  if (isNaN(unitPrice) || unitPrice < 0) {
+    res.status(400);
+    throw new Error('Unit price must be a non-negative number.');
+  }
+
+  // Parse and validate expiry date
+  const expiryDate = rawExpiryDate ? new Date(rawExpiryDate) : null;
+  if (!expiryDate || isNaN(expiryDate.getTime())) {
+    res.status(400);
+    throw new Error('A valid expiry date is required.');
+  }
+
+  // Handle image upload (if provided)
+  let imageUrl = null;
+  
+  if (req.file) {
+    try {
+      console.log('📤 Attempting to upload file to Cloudinary:', req.file.path);
+      
+      // Use Cloudinary's upload method directly
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'pharma-procurement/products',
+        resource_type: 'auto'
+      });
+      
+      console.log('✅ Cloudinary upload successful:', result.secure_url);
+      imageUrl = result.secure_url;
+      
+      // Clean up local file after upload
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.error('Error removing temp file:', err);
+      });
+    } catch (error) {
+      console.error('❌ Cloudinary upload error:', error);
+    }
+  }
+
+  // Create new product instance
   const product = new Product({
     supplier: req.user._id,
-    name, 
-    description, 
-    category, 
-    // manufacturer,
-    dosageForm, 
-    strength, 
-    quantityAvailable, 
-    unitPrice, 
+    name,
+    description,
+    category,
+    dosageForm,
+    strength,
+    quantityAvailable,
+    unitPrice,
     expiryDate,
     batchNumber,
-    storageConditions
+    storageConditions,
+    productImage: imageUrl,
   });
 
+  // Save to database
   const createdProduct = await product.save();
+  
+  console.log('✅ Product saved with image URL:', imageUrl);
+
   res.status(201).json({
-    message: 'Product created successfully',
-    product: createdProduct
+    message: '🎉 Product created successfully!',
+    product: createdProduct,
   });
 });
-
 // @desc    Get all products
 // @route   GET /api/products
 // @access  Public
 export const getProducts = asyncHandler(async (req, res) => {
-  const { 
-    category, 
-    minPrice, 
-    maxPrice, 
-    search, 
-    page = 1, 
-    limit = 10 
+  const {
+    category,
+    minPrice,
+    maxPrice,
+    search,
+    page = 1,
+    limit = 10
   } = req.query;
 
   // Build query object
   const query = {};
   if (category) query.category = category;
-  if (minPrice) query.unitPrice = { $gte: minPrice };
-  if (maxPrice) query.unitPrice = { 
-    ...query.unitPrice, 
-    $lte: maxPrice 
+  if (minPrice) query.unitPrice = { $gte: Number(minPrice) };
+  if (maxPrice) query.unitPrice = {
+    ...query.unitPrice,
+    $lte: Number(maxPrice)
   };
   if (search) {
     query.$or = [
       { name: { $regex: search, $options: 'i' } },
-      { manufacturer: { $regex: search, $options: 'i' } }
+      { description: { $regex: search, $options: 'i' } }
     ];
   }
 
+  // Debug log to see the constructed query
+  console.log('Query filters:', JSON.stringify(query));
+
   const products = await Product.find(query)
-    .limit(limit * 1)
-    .skip((page - 1) * limit)
+    .limit(Number(limit))
+    .skip((Number(page) - 1) * Number(limit))
     .sort({ createdAt: -1 });
+
+  // Debug log to check if image URLs are present
+  if (products.length > 0) {
+    console.log('Sample product image URL:', products[0].image);
+    console.log('Product structure:', {
+      id: products[0]._id,
+      hasImage: !!products[0].image,
+      fields: Object.keys(products[0]._doc || products[0])
+    });
+  }
 
   const total = await Product.countDocuments(query);
 
   res.json({
     message: 'Products retrieved successfully',
-    products,
-    totalPages: Math.ceil(total / limit),
-    currentPage: page
+    products,  // This is the array containing your products with images
+    totalPages: Math.ceil(total / Number(limit)),
+    currentPage: Number(page)
   });
 });
 
@@ -87,9 +187,20 @@ export const getProducts = asyncHandler(async (req, res) => {
 // @access  Private (Supplier only)
 export const getMyProducts = asyncHandler(async (req, res) => {
   const products = await Product.find({ supplier: req.user._id });
+  
+  // Debug log to check if image URLs are present
+  if (products.length > 0) {
+    console.log('My products - Sample product image URL:', products[0].image);
+    console.log('My products - Product structure:', {
+      id: products[0]._id,
+      hasImage: !!products[0].image,
+      fields: Object.keys(products[0]._doc || products[0])
+    });
+  }
+
   res.json({
     message: 'Your products retrieved successfully',
-    products
+    products  // This is the array containing your products with images
   });
 });
 
@@ -104,12 +215,15 @@ export const getProductById = asyncHandler(async (req, res) => {
     throw new Error('Product not found');
   }
 
+  // Debug log to check if image URL is present
+  console.log('Product by ID - Image URL:', product.image);
+  console.log('Product by ID - Fields:', Object.keys(product._doc || product));
+
   res.json({
     message: 'Product details retrieved successfully',
-    product
+    product  // This is the object containing your product with image
   });
 });
-
 // @desc    Update a product
 // @route   PUT /api/products/:id
 // @access  Private (Supplier only)

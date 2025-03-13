@@ -15,6 +15,9 @@ const ProductSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  productImage: {
+    type: String,
+  },
   category: {
     type: String,
     enum: [
