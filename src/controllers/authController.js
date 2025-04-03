@@ -322,6 +322,7 @@ export const getUserProfile = async (req, res) => {
       taxId: user.taxId,
       registrationCertificate: user.registrationCertificate,
       taxIdCertificate: user.taxIdCertificate,
+      pharmacyLicense: user.pharmacyLicense,
       companyLogo: user.companyLogo, // Include the company logo in the response
       isVerified: user.isVerified,
     });
