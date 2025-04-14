@@ -1,24 +1,43 @@
 import mongoose from 'mongoose';
 
+// Track the connection state
 let isConnected = false;
 
 const connectDB = async () => {
-  if (isConnected) return;
+  // If already connected, reuse the existing connection
+  if (isConnected) {
+    console.log('Using existing connection');
+    return;
+  }
+
+  // If mongoose has an active connection, use it
+  if (mongoose.connections[0].readyState) {
+    isConnected = true;
+    console.log(`Reusing existing MongoDB connection: ${mongoose.connection.host}`);
+    return;
+  }
 
   try {
-    // Connecting with retry options and connection pooling
+    // More robust connection settings
     const conn = await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,  // 5 seconds timeout for server selection
-      connectTimeoutMS: 10000,  // 10 seconds timeout for connecting
+      serverSelectionTimeoutMS: 10000,  // Increased to 10 seconds
+      connectTimeoutMS: 15000,  // Increased to 15 seconds
+      socketTimeoutMS: 45000,   // Added socket timeout
+      // Increase keepAlive to prevent disconnections
+      keepAlive: true,
+      keepAliveInitialDelay: 300000 // 5 minutes
     });
 
     isConnected = true;
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exit(1); // Exit if connection fails
+    console.error(`MongoDB connection error: ${error.message}`);
+    isConnected = false;
+    
+    // Don't exit the process, just log the error
+    // process.exit(1) - removing this line
   }
 };
 
