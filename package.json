@@ -30,6 +30,7 @@
     "nodemailer": "^6.9.16",
     "pdf-lib": "^1.17.1",
     "pdfkit": "^0.15.1",
+    "serverless-http": "^3.2.0",
     "unirest": "^0.6.0"
   },
   "devDependencies": {
