@@ -21,13 +21,10 @@ const connectDB = async () => {
     // More robust connection settings
     const conn = await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000,  // Increased to 10 seconds
-      connectTimeoutMS: 15000,  // Increased to 15 seconds
-      socketTimeoutMS: 45000,   // Added socket timeout
-      // Increase keepAlive to prevent disconnections
-      keepAlive: true,
-      keepAliveInitialDelay: 300000 // 5 minutes
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 10000,
+  connectTimeoutMS: 15000,
+  socketTimeoutMS: 45000
     });
 
     isConnected = true;
