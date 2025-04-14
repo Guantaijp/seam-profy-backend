@@ -84,4 +84,4 @@ app.use((err, req, res, next) => {
 app.use(errorMiddleware);
 
 // Export handler for Vercel
-export const handler = serverless(app);
+export default serverless(app);
