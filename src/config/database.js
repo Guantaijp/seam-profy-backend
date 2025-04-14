@@ -1,18 +1,22 @@
 import mongoose from 'mongoose';
-import envConfig from './envConfig.js';
+
+let isConnected = false; // flag to track the connection
 
 const connectDB = async () => {
+  // If already connected, skip the connection process
+  if (isConnected) return;
+
   try {
-    const conn = await mongoose.connect('mongodb+srv://jpguantai:5a3KB4Ldg4dcZ1bs@cluster0.krmv2.mongodb.net/pharmaProcurement', {
+    const conn = await mongoose.connect(process.env.MONGO_URI, { // Using an environment variable for MongoDB URI
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
 
+    isConnected = true; // Mark as connected
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`Error: ${error.message}`);
-    // Exit process with failure
-    process.exit(1);
+    process.exit(1); // Exit process with failure in case of error
   }
 };
 
