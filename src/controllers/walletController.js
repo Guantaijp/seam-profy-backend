@@ -6,7 +6,7 @@ import Wallet from '../models/Wallet.js';
 export const createWallet = async (req, res) => {
   try {
     const { name, type } = req.body;
-    const userId = req.user.id; // Get userId from authenticated user
+    const userId = req.user._id; // Get userId from authenticated user
     
     if (!name || !type) {
       return res.status(400).json({ 
