@@ -117,7 +117,7 @@ export const topUpViaBank = async (req, res) => {
       });
     }
     
-    const wallet = await Wallet.findOne({ id: walletId, userId });
+    const wallet = await Wallet.findOne({ _id: walletId, userId });
     
     if (!wallet) {
       return res.status(404).json({
