@@ -18,7 +18,7 @@ import invoicesRoutes from '../src/routes/invoiceRoutes.js';
 import mpesaRoutes from '../src/routes/mpesaRoute.js';
 import ratingRoutes from '../src/routes/ratingRoutes.js';
 import creditRoutes from '../src/routes/creditRequestRoutes.js';
-
+import walletRoutes from '../src/routes/walletRoutes.js';
 import errorMiddleware from '../src/middleware/errorMiddleware.js';
 
 dotenv.config();
@@ -57,10 +57,6 @@ app.get('/', (req, res) => {
   res.send('Welcome to the Pharma Procurement API running on Vercel!');
 });
 
-// Base route
-app.get('/', (req, res) => {
-  res.send('Welcome to the Pharma Procurement API running on Vercel!');
-});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -73,6 +69,7 @@ app.use('/api/invoices', invoicesRoutes);
 app.use('/api/mpesa', mpesaRoutes);
 app.use('/api/ratings', ratingRoutes);
 app.use('/api/credit', creditRoutes);
+app.use('/api/wallets', walletRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {
