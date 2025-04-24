@@ -2,10 +2,9 @@
 import mongoose from 'mongoose';
 
 const transactionSchema = new mongoose.Schema({
-  id: {
+  _id: {
     type: String,
-    required: true,
-    unique: true
+    required: true
   },
   type: {
     type: String,
@@ -40,10 +39,9 @@ const transactionSchema = new mongoose.Schema({
 }, { _id: false });
 
 const walletSchema = new mongoose.Schema({
-  id: {
+  _id: {
     type: String,
-    required: true,
-    unique: true
+    required: true
   },
   name: {
     type: String,
@@ -95,7 +93,7 @@ const walletSchema = new mongoose.Schema({
 
 // Create indexes for better query performance
 walletSchema.index({ userId: 1 });
-walletSchema.index({ id: 1 });
+// Removed the _id index that was causing the warning
 walletSchema.index({ status: 1 });
 walletSchema.index({ type: 1 });
 
