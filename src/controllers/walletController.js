@@ -48,7 +48,7 @@ export const createWallet = async (req, res) => {
 // Get all wallets for the authenticated user
 export const getUserWallets = async (req, res) => {
   try {
-    const userId = req.user.id; // Get userId from authenticated user
+    const userId = req.user._id; // Get userId from authenticated user
     
     const userWallets = await Wallet.find({ userId });
     
@@ -71,7 +71,7 @@ export const getUserWallets = async (req, res) => {
 export const getWallet = async (req, res) => {
   try {
     const { walletId } = req.params;
-    const userId = req.user.id; // Get userId from authenticated user
+    const userId = req.user._id; // Get userId from authenticated user
     
     const wallet = await Wallet.findOne({ id: walletId, userId });
     
@@ -101,7 +101,7 @@ export const topUpViaBank = async (req, res) => {
   try {
     const { walletId } = req.params;
     const { amount, bankAccount, bankName, reference } = req.body;
-    const userId = req.user.id; // Get userId from authenticated user
+    const userId = req.user._id; // Get userId from authenticated user
     
     if (!amount || !bankAccount || !bankName) {
       return res.status(400).json({
@@ -177,7 +177,7 @@ export const topUpViaMpesa = async (req, res) => {
   try {
     const { walletId } = req.params;
     const { amount, phoneNumber } = req.body;
-    const userId = req.user.id; // Get userId from authenticated user
+    const userId = req.user._id; // Get userId from authenticated user
     
     if (!amount || !phoneNumber) {
       return res.status(400).json({
@@ -251,7 +251,7 @@ export const topUpViaMpesa = async (req, res) => {
 export const getWalletTransactions = async (req, res) => {
   try {
     const { walletId } = req.params;
-    const userId = req.user.id; // Get userId from authenticated user
+    const userId = req.user._id; // Get userId from authenticated user
     
     const wallet = await Wallet.findOne({ id: walletId, userId });
     
@@ -434,7 +434,7 @@ export const updateWalletStatus = async (req, res) => {
     if (status === 'Suspended') {
       wallet.suspensionReason = reason;
       wallet.suspendedAt = new Date();
-      wallet.suspendedBy = req.user.id;
+      wallet.suspendedBy = req.user._id;
     } else if (status === 'Active' && wallet.status === 'Suspended') {
       // If reactivating a suspended wallet
       wallet.suspensionReason = null;
