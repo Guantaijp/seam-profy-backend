@@ -2,12 +2,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import Wallet from '../models/Wallet.js';
 
-// Create a new wallet
-// controllers/walletController.js
 export const createWallet = async (req, res) => {
   try {
     const { name, type } = req.body;
-    const userId = req.user._id;
+    const userId = req.user._id; // This is already an ObjectId
     
     if (!name || !type) {
       return res.status(400).json({
@@ -16,22 +14,15 @@ export const createWallet = async (req, res) => {
       });
     }
     
-    // Generate wallet ID - validate it's not empty
-    let walletId = uuidv4().substring(0, 8);
-    
-    // Additional safety check
-    if (!walletId) {
-      // Fallback ID generation if UUID fails
-      walletId = Date.now().toString();
-    }
-    
-    console.log("Generated wallet ID:", walletId); // Add this for debugging
+    // Generate a custom ID for the "id" field (NOT the _id field)
+    const walletId = uuidv4().substring(0, 8);
     
     const newWallet = new Wallet({
-      id: walletId, // Make sure this is not null
+      // DO NOT set _id manually - let MongoDB generate it
+      id: walletId,  // This is your custom string ID
       name,
       type,
-      userId,
+      userId,  // This is an ObjectId reference
       balance: 0,
       beginningBalance: 0,
       status: 'Active',
