@@ -5,7 +5,12 @@ import Wallet from '../models/Wallet.js';
 export const createWallet = async (req, res) => {
   try {
     const { name, type } = req.body;
-    const userId = req.user._id; // This is already an ObjectId
+    const userId = req.user._id;
+    
+    // Remove _id if it exists in the request body to let MongoDB generate it
+    if (req.body._id) {
+      delete req.body._id;
+    }
     
     if (!name || !type) {
       return res.status(400).json({
@@ -14,15 +19,13 @@ export const createWallet = async (req, res) => {
       });
     }
     
-    // Generate a custom ID for the "id" field (NOT the _id field)
     const walletId = uuidv4().substring(0, 8);
     
     const newWallet = new Wallet({
-      // DO NOT set _id manually - let MongoDB generate it
-      id: walletId,  // This is your custom string ID
+      id: walletId,
       name,
       type,
-      userId,  // This is an ObjectId reference
+      userId,
       balance: 0,
       beginningBalance: 0,
       status: 'Active',
@@ -45,7 +48,6 @@ export const createWallet = async (req, res) => {
     });
   }
 };
-
 // Get all wallets for the authenticated user
 export const getUserWallets = async (req, res) => {
   try {
