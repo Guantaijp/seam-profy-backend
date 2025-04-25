@@ -7,7 +7,6 @@ export const createWallet = async (req, res) => {
     const { name, type } = req.body;
     const userId = req.user._id;
     
-    // Remove _id if it exists in the request body to let MongoDB generate it
     if (req.body._id) {
       delete req.body._id;
     }
@@ -21,6 +20,8 @@ export const createWallet = async (req, res) => {
     
     const walletId = uuidv4().substring(0, 8);
     
+    // Create a wallet with an empty transactions array
+    // This avoids the unique index issue
     const newWallet = new Wallet({
       id: walletId,
       name,
@@ -29,7 +30,7 @@ export const createWallet = async (req, res) => {
       balance: 0,
       beginningBalance: 0,
       status: 'Active',
-      transactions: []
+      transactions: [] // Empty array - this is fine once the index is dropped
     });
     
     await newWallet.save();
