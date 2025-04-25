@@ -3,8 +3,8 @@ import mongoose from 'mongoose';
 const transactionSchema = new mongoose.Schema({
   id: {
     type: String,
-    required: true
-    // Removed unique: true
+    required: true,
+    default: () => uuidv4() // generate unique ID automatically
   },
   type: {
     type: String,
