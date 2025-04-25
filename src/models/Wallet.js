@@ -2,9 +2,10 @@
 import mongoose from 'mongoose';
 
 const transactionSchema = new mongoose.Schema({
-  _id: {
+  id: {
     type: String,
-    required: true
+    required: true,
+    unique: true
   },
   type: {
     type: String,
@@ -39,10 +40,11 @@ const transactionSchema = new mongoose.Schema({
 }, { _id: false });
 
 const walletSchema = new mongoose.Schema({
-  _id: {
-    type: String,
-    required: true
-  },
+  // id: {
+  //   type: String,
+  //   required: true,
+  //   unique: true
+  // },
   name: {
     type: String,
     required: true
@@ -69,19 +71,6 @@ const walletSchema = new mongoose.Schema({
     enum: ['Active', 'Inactive', 'Suspended'],
     default: 'Active'
   },
-  suspensionReason: {
-    type: String,
-    default: null
-  },
-  suspendedAt: {
-    type: Date,
-    default: null
-  },
-  suspendedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    default: null
-  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -91,12 +80,9 @@ const walletSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Create indexes for better query performance
+// Update your index to use _id if needed
 walletSchema.index({ userId: 1 });
-// Removed the _id index that was causing the warning
-walletSchema.index({ status: 1 });
-walletSchema.index({ type: 1 });
+// Remove the id index since we're not using that field anymore
 
 const Wallet = mongoose.model('Wallet', walletSchema);
-
 export default Wallet;

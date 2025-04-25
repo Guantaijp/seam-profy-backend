@@ -3,10 +3,11 @@ import { v4 as uuidv4 } from 'uuid';
 import Wallet from '../models/Wallet.js';
 
 // Create a new wallet
+// controllers/walletController.js
 export const createWallet = async (req, res) => {
   try {
     const { name, type } = req.body;
-    const userId = req.user._id;
+    const userId = req.user._id; // Get userId from authenticated user
     
     if (!name || !type) {
       return res.status(400).json({
@@ -15,26 +16,8 @@ export const createWallet = async (req, res) => {
       });
     }
     
-    // Generate wallet ID and verify it's not null
-    const walletId = uuidv4().substring(0, 8);
-    if (!walletId) {
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to generate wallet ID'
-      });
-    }
-    
-    // Check if a wallet with this ID already exists
-    const existingWallet = await Wallet.findOne({ id: walletId });
-    if (existingWallet) {
-      return res.status(409).json({
-        success: false,
-        message: 'Wallet ID conflict, please try again'
-      });
-    }
-    
     const newWallet = new Wallet({
-      id: walletId,
+      // No id field here - we'll use MongoDB's _id
       name,
       type,
       userId,
