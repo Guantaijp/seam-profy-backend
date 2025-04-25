@@ -1,11 +1,10 @@
-// models/Wallet.js
 import mongoose from 'mongoose';
 
 const transactionSchema = new mongoose.Schema({
   id: {
     type: String,
-    required: true,
-    unique: true
+    required: true
+    // Remove the unique: true constraint here
   },
   type: {
     type: String,
@@ -78,12 +77,15 @@ const walletSchema = new mongoose.Schema({
   transactions: [transactionSchema]
 }, {
   timestamps: true,
-  id: false 
+  id: false  // Disable the virtual id getter/setter
 });
 
-// Update your index to use _id if needed
-walletSchema.index({ userId: 1 });
-// Remove the id index since we're not using that field anymore
+// Create a compound index for transactions.id within each wallet
+// This ensures uniqueness only within a single wallet document
+walletSchema.index({ 'userId': 1, 'transactions.id': 1 });
+
+// Remove any existing index on just transactions.id
+// You'll need to do this in MongoDB if it exists
 
 const Wallet = mongoose.model('Wallet', walletSchema);
 export default Wallet;
