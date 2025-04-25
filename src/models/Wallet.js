@@ -1,10 +1,11 @@
 import mongoose from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
 
 const transactionSchema = new mongoose.Schema({
   id: {
     type: String,
     required: true,
-    default: () => uuidv4() // generate unique ID automatically
+    default: () => uuidv4()
   },
   type: {
     type: String,
@@ -36,13 +37,16 @@ const transactionSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
-}, { _id: false });
+}, {
+  _id: false,
+  id: false  // Prevent Mongoose from adding its own `id` virtual
+});
+
 
 const walletSchema = new mongoose.Schema({
   id: {
     type: String,
     required: true
-    // Removed unique: true
   },
   name: {
     type: String,
@@ -77,8 +81,9 @@ const walletSchema = new mongoose.Schema({
   transactions: [transactionSchema]
 }, {
   timestamps: true,
-  id: false  // Disable the virtual id getter/setter
+  id: false  // Disable virtual `id`
 });
+
 
 // Remove any index definitions that enforce uniqueness
 // If you had any walletSchema.index() calls, remove them or modify them
