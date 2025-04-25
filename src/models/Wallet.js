@@ -40,11 +40,11 @@ const transactionSchema = new mongoose.Schema({
 }, { _id: false });
 
 const walletSchema = new mongoose.Schema({
-  // id: {
-  //   type: String,
-  //   required: true,
-  //   unique: true
-  // },
+  id: {
+    type: String,  // Custom ID as a string
+    required: true,
+    unique: true
+  },
   name: {
     type: String,
     required: true
@@ -77,7 +77,8 @@ const walletSchema = new mongoose.Schema({
   },
   transactions: [transactionSchema]
 }, {
-  timestamps: true
+  timestamps: true,
+  id: false 
 });
 
 // Update your index to use _id if needed
