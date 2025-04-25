@@ -2,11 +2,6 @@ import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
 const transactionSchema = new mongoose.Schema({
-  id: {
-    type: String,
-    required: true,
-    default: () => uuidv4()
-  },
   type: {
     type: String,
     enum: ['TOPUP', 'WITHDRAWAL', 'TRANSFER', 'PAYMENT'],
@@ -39,7 +34,7 @@ const transactionSchema = new mongoose.Schema({
   }
 }, {
   _id: false,
-  id: false  // Prevent Mongoose from adding its own `id` virtual
+  id: false // Make sure Mongoose does not create a virtual `id` field
 });
 
 
@@ -81,8 +76,9 @@ const walletSchema = new mongoose.Schema({
   transactions: [transactionSchema]
 }, {
   timestamps: true,
-  id: false  // Disable virtual `id`
+  id: false
 });
+
 
 
 // Remove any index definitions that enforce uniqueness
