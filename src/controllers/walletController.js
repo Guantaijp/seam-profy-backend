@@ -7,7 +7,7 @@ import Wallet from '../models/Wallet.js';
 export const createWallet = async (req, res) => {
   try {
     const { name, type } = req.body;
-    const userId = req.user._id; // Get userId from authenticated user
+    const userId = req.user._id;
     
     if (!name || !type) {
       return res.status(400).json({
@@ -16,8 +16,19 @@ export const createWallet = async (req, res) => {
       });
     }
     
+    // Generate wallet ID - validate it's not empty
+    let walletId = uuidv4().substring(0, 8);
+    
+    // Additional safety check
+    if (!walletId) {
+      // Fallback ID generation if UUID fails
+      walletId = Date.now().toString();
+    }
+    
+    console.log("Generated wallet ID:", walletId); // Add this for debugging
+    
     const newWallet = new Wallet({
-      // No id field here - we'll use MongoDB's _id
+      id: walletId, // Make sure this is not null
       name,
       type,
       userId,
