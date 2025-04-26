@@ -41,4 +41,17 @@ async function dbConnect() {
   return cached.conn;
 }
 
+const dropBadIndex = async () => {
+  try {
+    await mongoose.connect(MONGO_URI);
+    const result = await Wallet.collection.dropIndex("transactions.id_1");
+    console.log("Dropped index:", result);
+    await mongoose.disconnect();
+  } catch (err) {
+    console.error("Failed to drop index:", err.message);
+  }
+};
+
+dropBadIndex();
+
 export default dbConnect;
