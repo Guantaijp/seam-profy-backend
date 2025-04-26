@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { v4 as uuidv4 } from 'uuid';
 
 const transactionSchema = new mongoose.Schema({
   type: {
@@ -34,9 +33,8 @@ const transactionSchema = new mongoose.Schema({
   }
 }, {
   _id: false,
-  id: false // Make sure Mongoose does not create a virtual `id` field
+  id: false
 });
-
 
 const walletSchema = new mongoose.Schema({
   id: {
@@ -79,10 +77,9 @@ const walletSchema = new mongoose.Schema({
   id: false
 });
 
-
-
-// Remove any index definitions that enforce uniqueness
-// If you had any walletSchema.index() calls, remove them or modify them
+// ✅ No unique index on id or userId
+// If you want to enforce unique wallet names per user, uncomment below:
+// walletSchema.index({ userId: 1, name: 1 }, { unique: true });
 
 const Wallet = mongoose.model('Wallet', walletSchema);
 export default Wallet;
