@@ -2,10 +2,6 @@ import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
 const transactionSchema = new mongoose.Schema({
-  id: {
-    type: String,
-    default: () => uuidv4(), // auto-generate unique ID
-  },
   type: {
     type: String,
     enum: ['TOPUP', 'WITHDRAWAL', 'TRANSFER', 'PAYMENT'],
@@ -37,9 +33,10 @@ const transactionSchema = new mongoose.Schema({
     default: Date.now
   }
 }, {
-  _id: false, // don't create internal MongoDB _id for subdocuments
-  id: false
+  _id: false, // no internal _id for subdocs
+  id: false   // no virtual id either
 });
+
 
 
 const walletSchema = new mongoose.Schema({
