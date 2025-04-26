@@ -34,7 +34,8 @@ const transactionSchema = new mongoose.Schema({
   }
 }, {
   _id: false, // no internal _id for subdocs
-  id: false   // no virtual id either
+  id: false,  // no virtual id either
+  autoIndex: false
 });
 
 
