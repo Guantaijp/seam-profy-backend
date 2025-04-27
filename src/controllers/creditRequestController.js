@@ -84,8 +84,8 @@ export const createCreditRequest = async (req, res) => {
     const creditScoreResult = await calculateCreditScore(req.user._id, req.user)
     const creditScore = creditScoreResult.score
 
-    // Determine status based on credit score
-    const status = creditScore > 80 ? "approved" : "pending"
+    // Determine status based on credit score - FIXED: Using capitalized status values
+    const status = creditScore > 80 ? "Approved" : "Pending"
 
     // Calculate repayment amount based on interest rate and term
     const monthlyInterest = interestRate / 100
@@ -130,6 +130,7 @@ export const createCreditRequest = async (req, res) => {
       status,
       paymentDates: processedPaymentDates,
       installmentAmounts: installmentAmounts.length > 0 ? installmentAmounts : [repaymentAmount],
+      paymentOption: paymentOption || "30days", // Default to 30days if not specified
     })
 
     await newCreditRequest.save({ session })
@@ -187,16 +188,19 @@ export const getMyCreditRequests = async (req, res) => {
       summary.totalAmount += request.repaymentAmount
       summary.totalPaid += request.paidAmount
       summary.totalRemaining += request.repaymentAmount - request.paidAmount
-      summary.status[request.status.toLowerCase()]++
+
+      // Convert status to lowercase for the summary
+      const statusLower = request.status.toLowerCase()
+      summary.status[statusLower]++
     })
 
-    // Group requests by individual status
+    // Group requests by individual status - FIXED: Using capitalized status values for filtering
     const grouped = {
-      pending: creditRequests.filter((req) => req.status === "pending"),
-      approved: creditRequests.filter((req) => req.status === "approved"),
-      paid: creditRequests.filter((req) => req.status === "paid"),
-      overdue: creditRequests.filter((req) => req.status === "overdue"),
-      rejected: creditRequests.filter((req) => req.status === "rejected"),
+      pending: creditRequests.filter((req) => req.status === "Pending"),
+      approved: creditRequests.filter((req) => req.status === "Approved"),
+      paid: creditRequests.filter((req) => req.status === "Paid"),
+      overdue: creditRequests.filter((req) => req.status === "Overdue"),
+      rejected: creditRequests.filter((req) => req.status === "Rejected"),
     }
 
     res.json({
@@ -216,7 +220,7 @@ export const getAllCreditRequests = async (req, res) => {
   try {
     const { status, page = 1, limit = 10 } = req.query
 
-    // Create a filter based on the status, if provided
+    // Create a filter based on the status, if provided - FIXED: Capitalize first letter of status
     const filter = status ? { status: status.charAt(0).toUpperCase() + status.slice(1).toLowerCase() } : {}
 
     // Calculate pagination values
@@ -254,10 +258,13 @@ export const getAllCreditRequests = async (req, res) => {
       summary.totalAmount += request.repaymentAmount
       summary.totalPaid += request.paidAmount
       summary.totalRemaining += request.repaymentAmount - request.paidAmount
-      summary.status[request.status.toLowerCase()]++
+
+      // Convert status to lowercase for the summary
+      const statusLower = request.status.toLowerCase()
+      summary.status[statusLower]++
     })
 
-    // Group all requests by status
+    // Group all requests by status - FIXED: Using capitalized status values for filtering
     const grouped = {
       active: allCreditRequests.filter((req) => ["Approved", "Overdue"].includes(req.status)),
       completed: allCreditRequests.filter((req) => req.status === "Paid"),
@@ -296,10 +303,14 @@ export const updateCreditRequestStatus = async (req, res) => {
     const { creditRequestId } = req.params
     const { newStatus } = req.body
 
-    const validStatuses = ["pending", "approved", "rejected", "paid", "overdue"]
+    // FIXED: Using capitalized status values
+    const validStatuses = ["Pending", "Approved", "Rejected", "Paid", "Overdue"]
+
+    // Capitalize the first letter of the status
+    const formattedStatus = newStatus.charAt(0).toUpperCase() + newStatus.slice(1).toLowerCase()
 
     // Validate the new status
-    if (!validStatuses.includes(newStatus)) {
+    if (!validStatuses.includes(formattedStatus)) {
       return res.status(400).json({ message: `Invalid status: ${newStatus}` })
     }
 
@@ -310,7 +321,7 @@ export const updateCreditRequestStatus = async (req, res) => {
     }
 
     // Update the status
-    creditRequest.status = newStatus
+    creditRequest.status = formattedStatus
 
     // Save the updated credit request
     await creditRequest.save({ session })
@@ -319,7 +330,7 @@ export const updateCreditRequestStatus = async (req, res) => {
     await session.commitTransaction()
 
     res.json({
-      message: `Credit request status updated to ${newStatus} successfully`,
+      message: `Credit request status updated to ${formattedStatus} successfully`,
       creditRequest,
     })
   } catch (error) {
@@ -401,6 +412,7 @@ export const calculateCreditScore = async (healthFacilityId, requestingUser) => 
     // e. Past Financing History (15%)
     const totalRequests = pastFinancing.length
     if (totalRequests > 0) {
+      // FIXED: Using capitalized status values for filtering
       const successfullyPaidRequests = pastFinancing.filter((request) => request.status === "Paid").length
       const financingHistoryPercentage = (successfullyPaidRequests / totalRequests) * 100
 
@@ -435,6 +447,7 @@ export const calculateCreditScore = async (healthFacilityId, requestingUser) => 
         },
         financingHistory: {
           totalRequests,
+          // FIXED: Using capitalized status values for filtering
           successfulPayments: pastFinancing.filter((request) => request.status === "Paid").length,
         },
       }
