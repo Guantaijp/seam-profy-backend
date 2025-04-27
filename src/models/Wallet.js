@@ -39,47 +39,43 @@ const transactionSchema = new mongoose.Schema({
 });
 
 
-
 const walletSchema = new mongoose.Schema({
   id: {
     type: String,
-    required: true
+    required: true,
+    unique: true,
   },
   name: {
     type: String,
-    required: true
+    required: true,
   },
   type: {
     type: String,
-    required: true
+    required: true,
+    enum: ["KES", "USD"],
   },
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: String,
+    required: true,
   },
   balance: {
     type: Number,
-    default: 0
+    default: 0,
   },
   beginningBalance: {
     type: Number,
-    default: 0
+    default: 0,
   },
   status: {
     type: String,
-    enum: ['Active', 'Inactive', 'Suspended'],
-    default: 'Active'
+    enum: ["Active", "Inactive"],
+    default: "Active",
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  transactions: {
+    type: Array,
+    default: [],
   },
-  transactions: [transactionSchema]
-}, {
-  timestamps: true,
-  id: false
-});
+})
 
 // ✅ No unique index on id or userId
 // If you want to enforce unique wallet names per user, uncomment below:

@@ -1,54 +1,59 @@
-// controllers/walletController.js
 import { v4 as uuidv4 } from 'uuid';
 import Wallet from '../models/Wallet.js';
 
 export const createWallet = async (req, res) => {
   try {
-    const { name, type } = req.body;
-    const userId = req.user._id;
-    
-    if (req.body._id) {
-      delete req.body._id;
-    }
-    
-    if (!name || !type) {
+    const { walletName, walletType } = req.body
+    const userId = req.user._id
+
+    // Validate required fields
+    if (!walletName || !walletType) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide name and type'
-      });
+        message: "Please provide wallet name and wallet type",
+      })
     }
-    
-    const walletId = uuidv4().substring(0, 8);
-    
-    // Create a wallet with an empty transactions array
-    // This avoids the unique index issue
+
+    // Validate wallet type
+    if (!["KES", "USD"].includes(walletType)) {
+      return res.status(400).json({
+        success: false,
+        message: "Wallet type must be either KES or USD",
+      })
+    }
+
+    const walletId = uuidv4() // Generate unique ID
+
     const newWallet = new Wallet({
       id: walletId,
-      name,
-      type,
+      name: walletName,
+      type: walletType,
       userId,
       balance: 0,
       beginningBalance: 0,
-      status: 'Active',
-      transactions: [] // Empty array - this is fine once the index is dropped
-    });
-    
-    await newWallet.save();
-    
+      status: "Active",
+      transactions: [],
+    })
+
+    await newWallet.save()
+
     return res.status(201).json({
       success: true,
-      message: 'Wallet created successfully',
-      data: newWallet
-    });
+      message: "Wallet created successfully",
+      data: newWallet,
+    })
   } catch (error) {
-    console.error('Error creating wallet:', error);
+    console.error("Error creating wallet:", error)
     return res.status(500).json({
       success: false,
-      message: 'Failed to create wallet',
-      error: error.message
-    });
+      message: "Failed to create wallet",
+      error: error.message,
+    })
   }
-};
+}
+
+
+
 // Get all wallets for the authenticated user
 export const getUserWallets = async (req, res) => {
   try {
