@@ -2,10 +2,10 @@
   "type": "module",
   "name": "pharma-procurement-backend",
   "version": "1.0.0",
-  "main": "api/index.js",
+  "main": "src/app.js",
   "scripts": {
-    "start": "node api/index.js",
-    "dev": "nodemon api/index.js",
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
     "build": "echo 'No build necessary for Express app'"
   },
   "keywords": [],

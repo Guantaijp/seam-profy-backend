@@ -20,6 +20,10 @@ import mpesaRoutes from './routes/mpesaRoute.js';
 import ratingRoutes from './routes/ratingRoutes.js';
 import creditRoutes from './routes/creditRequestRoutes.js';
 import walletRoutes from '../src/routes/walletRoutes.js';
+
+// import dotenv from 'dotenv';
+// dotenv.config();
+
 // Middleware imports
 import errorMiddleware from './middleware/errorMiddleware.js';
 
